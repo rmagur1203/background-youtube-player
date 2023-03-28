@@ -1,15 +1,24 @@
+import 'dart:math';
+
 import 'package:audio_service/audio_service.dart';
+import 'package:audio_session/audio_session.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:youtube_explode_dart/youtube_explode_dart.dart';
+
+import 'common.dart';
+import 'control.dart';
 
 late AudioHandler _audioHandler;
+final _player = AudioPlayer();
 
 void main() async {
   _audioHandler = await AudioService.init(
     builder: () => AudioPlayerHandler(),
     config: const AudioServiceConfig(
-      androidNotificationChannelId: 'com.rmagur1203.youtube.channel.audio',
+      androidNotificationChannelId: 'com.example.youtube.channel.audio',
       androidNotificationChannelName: 'Audio playback',
       androidNotificationOngoing: true,
     ),
@@ -30,8 +39,62 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MainScreen extends StatelessWidget {
+class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
+
+  @override
+  _MainScreenState createState() => _MainScreenState();
+}
+
+class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
+  final TextEditingController _textController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    ambiguate(WidgetsBinding.instance)!.addObserver(this);
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.black,
+    ));
+    _init();
+  }
+
+  Future<void> _init() async {
+    final session = await AudioSession.instance;
+    await session.configure(const AudioSessionConfiguration.speech());
+    // Listen to errors during playback.
+    _player.playbackEventStream.listen((event) {},
+        onError: (Object e, StackTrace stackTrace) {
+      print('A stream error occurred: $e');
+    });
+  }
+
+  // @override
+  // void dispose() {
+  //   ambiguate(WidgetsBinding.instance)!.removeObserver(this);
+  //   // Release decoders and buffers back to the operating system making them
+  //   // available for other apps to use.
+  //   _player.dispose();
+  //   super.dispose();
+  // }
+
+  // @override
+  // void didChangeAppLifecycleState(AppLifecycleState state) {
+  //   if (state == AppLifecycleState.paused) {
+  //     // Release the player's resources when not in use. We use "stop" so that
+  //     // if the app resumes later, it will still remember what position to
+  //     // resume from.
+  //     _player.stop();
+  //   }
+  // }
+
+  Stream<PositionData> get _positionDataStream =>
+      Rx.combineLatest3<Duration, Duration, Duration?, PositionData>(
+          _player.positionStream,
+          _player.bufferedPositionStream,
+          _player.durationStream,
+          (position, bufferedPosition, duration) => PositionData(
+              position, bufferedPosition, duration ?? Duration.zero));
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +110,8 @@ class MainScreen extends StatelessWidget {
               stream: _audioHandler.mediaItem,
               builder: (context, snapshot) {
                 final mediaItem = snapshot.data;
-                return Image.network(mediaItem?.artUri.toString() ?? '');
+                if (mediaItem?.artUri == null) return Container();
+                return Image.network(mediaItem?.artUri!.toString() ?? '');
               },
             ),
             // Show media item title
@@ -59,42 +123,19 @@ class MainScreen extends StatelessWidget {
               },
             ),
             // Play/pause/stop buttons.
-            StreamBuilder<bool>(
-              stream: _audioHandler.playbackState
-                  .map((state) => state.playing)
-                  .distinct(),
-              builder: (context, snapshot) {
-                final playing = snapshot.data ?? false;
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _button(Icons.fast_rewind, _audioHandler.rewind),
-                    if (playing)
-                      _button(Icons.pause, _audioHandler.pause)
-                    else
-                      _button(Icons.play_arrow, _audioHandler.play),
-                    _button(Icons.stop, _audioHandler.stop),
-                    _button(Icons.fast_forward, _audioHandler.fastForward),
-                  ],
-                );
-              },
-            ),
+            ControlButtons(_player),
             // A seek bar.
-            StreamBuilder<MediaState>(
-              stream: _mediaStateStream,
+            StreamBuilder<PositionData>(
+              stream: _positionDataStream,
               builder: (context, snapshot) {
-                final mediaState = snapshot.data;
-                final currentSliderValue =
-                    (mediaState?.position.inSeconds ?? 0);
-                final maxSliderValue =
-                    (mediaState?.mediaItem?.duration?.inSeconds ?? 0);
-                return Slider(
-                    value: currentSliderValue.toDouble(),
-                    max: maxSliderValue.toDouble(),
-                    label: currentSliderValue.round().toString(),
-                    onChanged: (value) {
-                      _audioHandler.seek(Duration(seconds: value.toInt()));
-                    });
+                final positionData = snapshot.data;
+                return SeekBar(
+                  duration: positionData?.duration ?? Duration.zero,
+                  position: positionData?.position ?? Duration.zero,
+                  bufferedPosition:
+                      positionData?.bufferedPosition ?? Duration.zero,
+                  onChangeEnd: _player.seek,
+                );
               },
             ),
             // Display the processing state.
@@ -111,6 +152,60 @@ class MainScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Add new audio'),
+              content: TextField(
+                controller: _textController,
+                decoration: const InputDecoration(
+                  labelText: 'Audio URL',
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('CANCEL'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    addYoutube(_textController.text);
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('ADD'),
+                ),
+              ],
+            ),
+          );
+        },
+        tooltip: 'Add new audio',
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Future<void> addYoutube(String url) async {
+    var yt = YoutubeExplode();
+    var info = await yt.videos.get(url);
+    var stream = await yt.videos.streams.getManifest(info.id);
+    var audio = stream.audioOnly
+        .where((x) => x.codec.subtype == 'mp4')
+        .withHighestBitrate();
+
+    print(audio);
+
+    await _audioHandler.addQueueItem(
+      MediaItem(
+        id: audio.url.toString(),
+        title: info.title,
+        artist: info.author,
+        duration: info.duration,
+        artUri: Uri.parse(info.thumbnails.standardResUrl),
       ),
     );
   }
@@ -138,21 +233,16 @@ class MediaState {
 }
 
 class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
-  static final _item = MediaItem(
-      id: 'https://s3.amazonaws.com/scifri-episodes/scifri20181123-episode.mp3',
-      album: "Science Friday",
-      title: "A Salute To Head-Scratching Science",
-      artist: "Science Friday and WNYC Studios",
-      duration: const Duration(milliseconds: 5739820),
-      artUri: Uri.parse(
-          'https://media.wnyc.org/i/1400/1400/l/80/1/ScienceFriday_WNYCStudios_1400.jpg'));
-
-  final _player = AudioPlayer();
-
   AudioPlayerHandler() {
     _player.playbackEventStream.map(_transformEvent).pipe(playbackState);
-    mediaItem.add(_item);
-    _player.setAudioSource(AudioSource.uri(Uri.parse(_item.id)));
+    // mediaItem.add(_item);
+    // _player.setAudioSource(AudioSource.uri(Uri.parse(_item.id)));
+  }
+
+  @override
+  Future<void> addQueueItem(MediaItem mediaItem) async {
+    await super.addQueueItem(mediaItem);
+    _player.setAudioSource(AudioSource.uri(Uri.parse(mediaItem.id)));
   }
 
   @override

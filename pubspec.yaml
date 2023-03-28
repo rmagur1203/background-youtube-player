@@ -35,11 +35,12 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
-  audio_service: ^0.18.9
   just_audio: ^0.9.32
-  rxdart: ^0.27.7
   just_audio_windows: ^0.2.0
   youtube_explode_dart: ^1.12.4
+  rxdart: ^0.27.7
+  audio_session: ^0.1.13
+  audio_service: ^0.18.9
 
 dev_dependencies:
   flutter_test:
