@@ -150,6 +150,7 @@ void showSliderDialog({
   required double value,
   required Stream<double> stream,
   required ValueChanged<double> onChanged,
+  int fixed = 1,
 }) {
   showDialog<void>(
     context: context,
@@ -161,7 +162,7 @@ void showSliderDialog({
           height: 100.0,
           child: Column(
             children: [
-              Text('${snapshot.data?.toStringAsFixed(1)}$valueSuffix',
+              Text('${snapshot.data?.toStringAsFixed(fixed)}$valueSuffix',
                   style: const TextStyle(
                       fontFamily: 'Fixed',
                       fontWeight: FontWeight.bold,

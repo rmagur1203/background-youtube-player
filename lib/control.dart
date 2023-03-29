@@ -23,12 +23,13 @@ class ControlButtons extends StatelessWidget {
             showSliderDialog(
               context: context,
               title: "Adjust volume",
-              divisions: 10,
+              divisions: 100,
+              fixed: 0,
               min: 0.0,
-              max: 1.0,
-              value: player.volume,
-              stream: player.volumeStream,
-              onChanged: player.setVolume,
+              max: 100.0,
+              value: player.volume * 100.0,
+              stream: player.volumeStream.map((event) => event * 100.0),
+              onChanged: (x) => player.setVolume(x / 100.0),
             );
           },
         ),

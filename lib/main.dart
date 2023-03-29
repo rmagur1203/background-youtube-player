@@ -44,6 +44,8 @@ class MainScreen extends StatefulWidget {
   _MainScreenState createState() => _MainScreenState();
 }
 
+enum Choice { playlist, video }
+
 class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   final TextEditingController _textController = TextEditingController();
 
@@ -67,14 +69,14 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
 
-  // @override
-  // void dispose() {
-  //   ambiguate(WidgetsBinding.instance)!.removeObserver(this);
-  //   // Release decoders and buffers back to the operating system making them
-  //   // available for other apps to use.
-  //   _player.dispose();
-  //   super.dispose();
-  // }
+  @override
+  void dispose() {
+    ambiguate(WidgetsBinding.instance)!.removeObserver(this);
+    // Release decoders and buffers back to the operating system making them
+    // available for other apps to use.
+    _player.dispose();
+    super.dispose();
+  }
 
   // @override
   // void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -103,7 +105,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Audio Service Demo'),
+        title: const Text('Youtube'),
       ),
       body: Center(
         child: Column(
@@ -188,6 +190,41 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                               onTap: () => _audioHandler.skipToQueueItem(i),
                               selected: snapshot.data!.mediaItem?.id ==
                                   snapshot.data!.queue[i].id,
+                              onLongPress: () => showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Remove audio'),
+                                  content: Text(
+                                      'Are you sure you want to remove ${snapshot.data!.queue[i].title} from the list?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: const Text('CANCEL'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        if (snapshot.data!.mediaItem?.id ==
+                                            snapshot.data!.queue[i].id) {
+                                          _audioHandler.stop();
+                                          if (_audioHandler
+                                                  .queue.value.length ==
+                                              1) {
+                                            _audioHandler.mediaItem.add(null);
+                                          } else {
+                                            _audioHandler.skipToNext();
+                                          }
+                                        }
+                                        _audioHandler.removeQueueItem(
+                                            snapshot.data!.queue[i]);
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: const Text('REMOVE'),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                         ],
                       );
@@ -216,8 +253,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                 ),
                 TextButton(
                   onPressed: () {
-                    addYoutube(_textController.text);
                     Navigator.of(context).pop();
+                    addYoutube(_textController.text);
                   },
                   child: const Text('ADD'),
                 ),
@@ -233,21 +270,87 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   Future<void> addYoutube(String url) async {
     var yt = YoutubeExplode();
-    var info = await yt.videos.get(url);
-    var stream = await yt.videos.streams.getManifest(info.id);
-    var audio = stream.audioOnly
-        .where((x) => x.codec.subtype == 'mp4')
-        .withHighestBitrate();
+    var isPlaylist = PlaylistId.parsePlaylistId(url) != null;
+    var isVideo = VideoId.parseVideoId(url) != null;
+    print(isPlaylist);
+    print(isVideo);
+    if (isPlaylist && isVideo) {
+      // if both are true, ask to user to choose add playlist or video
+      var result = await showDialog<Choice>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Choose'),
+          content: const Text('Do you want to add the playlist or the video?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(Choice.playlist);
+              },
+              child: const Text('ADD PLAYLIST'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(Choice.video);
+              },
+              child: const Text('ADD VIDEO'),
+            ),
+          ],
+        ),
+      );
 
-    await _audioHandler.addQueueItem(
-      MediaItem(
-        id: audio.url.toString(),
-        title: info.title,
-        artist: info.author,
-        duration: info.duration,
-        artUri: Uri.parse(info.thumbnails.standardResUrl),
-      ),
-    );
+      if (result == Choice.playlist) {
+        isVideo = false;
+      } else if (result == Choice.video) {
+        isPlaylist = false;
+      }
+    }
+    if (isPlaylist) {
+      var playlist = await yt.playlists.get(url);
+      var videos = yt.playlists.getVideos(url);
+
+      _audioHandler.queueTitle.add(playlist.title);
+
+      // _audioHandler.addQueueItems([]);
+      await for (var video in videos) {
+        await _audioHandler.addQueueItem(
+          MediaItem(
+            id: video.id.value,
+            title: video.title,
+            artist: video.author,
+            duration: video.duration,
+            artUri: Uri.parse(video.thumbnails.standardResUrl),
+          ),
+        );
+      }
+    } else if (isVideo) {
+      var info = await yt.videos.get(url);
+      await _audioHandler.addQueueItem(
+        MediaItem(
+          id: VideoId(url).value,
+          title: info.title,
+          artist: info.author,
+          duration: info.duration,
+          artUri: Uri.parse(info.thumbnails.standardResUrl),
+        ),
+      );
+    } else {
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
+          content: const Text('The URL is not valid'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   /// A stream reporting the combined state of the current media item and its
@@ -288,9 +391,18 @@ class AudioPlayerHandler extends BaseAudioHandler
     _player.playbackEventStream.map(_transformEvent).pipe(playbackState);
     _player.processingStateStream.listen((event) {
       if (event == ProcessingState.completed) {
-        skipToNext().then((value) => _player.play());
+        skipToNext();
       }
     });
+  }
+
+  Future<Duration?> setAudioSource(MediaItem mediaItem) async {
+    var yt = YoutubeExplode();
+    var stream = await yt.videos.streams.getManifest(mediaItem.id);
+    var audio = stream.audioOnly
+        .where((x) => x.codec.subtype == 'mp4')
+        .withHighestBitrate();
+    return await _player.setAudioSource(AudioSource.uri(audio.url));
   }
 
   @override
@@ -305,7 +417,7 @@ class AudioPlayerHandler extends BaseAudioHandler
     queue.add(queue.value);
     if (this.mediaItem.value == null) {
       this.mediaItem.add(mediaItem);
-      _player.setAudioSource(AudioSource.uri(Uri.parse(mediaItem.id)));
+      setAudioSource(mediaItem);
     }
   }
 
@@ -314,7 +426,7 @@ class AudioPlayerHandler extends BaseAudioHandler
     queue.add(mediaItems);
     if (mediaItem.value == null && mediaItems.isNotEmpty) {
       mediaItem.add(mediaItems.first);
-      _player.setAudioSource(AudioSource.uri(Uri.parse(mediaItems.first.id)));
+      setAudioSource(mediaItems.first);
     }
   }
 
@@ -330,9 +442,9 @@ class AudioPlayerHandler extends BaseAudioHandler
         return;
       }
     }
+    _player.stop();
     mediaItem.add(queue.value[index]);
-    await _player
-        .setAudioSource(AudioSource.uri(Uri.parse(queue.value[index].id)));
+    await setAudioSource(queue.value[index]).then((value) => _player.play());
   }
 
   @override
