@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 
 import 'common.dart';
+import 'main.dart';
 
 class ControlButtons extends StatelessWidget {
-  final AudioHandler handler;
+  final AudioPlayerHandler handler;
   final AudioPlayer player;
 
   const ControlButtons(this.handler, this.player, {Key? key}) : super(key: key);
@@ -78,6 +79,23 @@ class ControlButtons extends StatelessWidget {
         IconButton(
           icon: const Icon(Icons.skip_next),
           onPressed: handler.skipToNext,
+        ),
+        StreamBuilder<AudioServiceRepeatMode>(
+          stream: handler.repeatModeStream,
+          builder: (context, snapshot) => IconButton(
+            icon: Icon({
+              AudioServiceRepeatMode.none: Icons.repeat_one,
+              AudioServiceRepeatMode.one: Icons.repeat,
+              AudioServiceRepeatMode.all: Icons.looks_one_outlined,
+            }[snapshot.data ?? AudioServiceRepeatMode.none]),
+            onPressed: () => {
+              handler.setRepeatMode({
+                AudioServiceRepeatMode.none: AudioServiceRepeatMode.one,
+                AudioServiceRepeatMode.one: AudioServiceRepeatMode.all,
+                AudioServiceRepeatMode.all: AudioServiceRepeatMode.none,
+              }[snapshot.data ?? AudioServiceRepeatMode.none]!),
+            },
+          ),
         ),
         // Opens speed slider dialog
         StreamBuilder<double>(

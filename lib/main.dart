@@ -9,7 +9,7 @@ import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'common.dart';
 import 'control.dart';
 
-late AudioHandler _audioHandler;
+late AudioPlayerHandler _audioHandler;
 final _player = AudioPlayer();
 
 void main() async {
@@ -279,8 +279,10 @@ class QueueState {
   QueueState(this.queue, this.mediaItem);
 }
 
-class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
-  final List<MediaItem> nowQueue = [];
+class AudioPlayerHandler extends BaseAudioHandler
+    with SeekHandler, QueueHandler {
+  BehaviorSubject<AudioServiceRepeatMode> repeatModeStream =
+      BehaviorSubject.seeded(AudioServiceRepeatMode.none);
 
   AudioPlayerHandler() {
     _player.playbackEventStream.map(_transformEvent).pipe(playbackState);
@@ -289,14 +291,18 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
         skipToNext().then((value) => _player.play());
       }
     });
-    // mediaItem.add(_item);
-    // _player.setAudioSource(AudioSource.uri(Uri.parse(_item.id)));
+  }
+
+  @override
+  Future<void> setRepeatMode(AudioServiceRepeatMode repeatMode) async {
+    await super.setRepeatMode(repeatMode);
+    repeatModeStream.add(repeatMode);
   }
 
   @override
   Future<void> addQueueItem(MediaItem mediaItem) async {
-    nowQueue.add(mediaItem);
-    queue.add(nowQueue);
+    queue.value.add(mediaItem);
+    queue.add(queue.value);
     if (this.mediaItem.value == null) {
       this.mediaItem.add(mediaItem);
       _player.setAudioSource(AudioSource.uri(Uri.parse(mediaItem.id)));
@@ -304,30 +310,39 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
   }
 
   @override
+  Future<void> addQueueItems(List<MediaItem> mediaItems) async {
+    queue.add(mediaItems);
+    if (mediaItem.value == null && mediaItems.isNotEmpty) {
+      mediaItem.add(mediaItems.first);
+      _player.setAudioSource(AudioSource.uri(Uri.parse(mediaItems.first.id)));
+    }
+  }
+
+  @override
   Future<void> skipToQueueItem(int index) async {
-    mediaItem.add(nowQueue[index]);
+    if (index >= queue.value.length) {
+      if (repeatModeStream.value != AudioServiceRepeatMode.none) {
+        if (repeatModeStream.value == AudioServiceRepeatMode.one) {
+          repeatModeStream.add(AudioServiceRepeatMode.none);
+        }
+        index = index % queue.value.length;
+      } else {
+        return;
+      }
+    }
+    mediaItem.add(queue.value[index]);
     await _player
-        .setAudioSource(AudioSource.uri(Uri.parse(nowQueue[index].id)));
+        .setAudioSource(AudioSource.uri(Uri.parse(queue.value[index].id)));
   }
 
   @override
-  Future<void> skipToNext() async {
-    if (nowQueue.indexOf(mediaItem.value!) + 1 < nowQueue.length) {
-      var idx = nowQueue.indexOf(mediaItem.value!) + 1;
-      mediaItem.add(nowQueue[idx]);
-      await _player
-          .setAudioSource(AudioSource.uri(Uri.parse(nowQueue[idx].id)));
-    }
+  Future<void> skipToNext() {
+    return skipToQueueItem(queue.value.indexOf(mediaItem.value!) + 1);
   }
 
   @override
-  Future<void> skipToPrevious() async {
-    if (nowQueue.indexOf(mediaItem.value!) - 1 >= 0) {
-      var idx = nowQueue.indexOf(mediaItem.value!) - 1;
-      mediaItem.add(nowQueue[idx]);
-      await _player
-          .setAudioSource(AudioSource.uri(Uri.parse(nowQueue[idx].id)));
-    }
+  Future<void> skipToPrevious() {
+    return skipToQueueItem(queue.value.indexOf(mediaItem.value!) - 1);
   }
 
   @override
