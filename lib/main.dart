@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter/material.dart';
@@ -61,7 +59,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   Future<void> _init() async {
     final session = await AudioSession.instance;
-    await session.configure(const AudioSessionConfiguration.speech());
+    await session.configure(const AudioSessionConfiguration.music());
     // Listen to errors during playback.
     _player.playbackEventStream.listen((event) {},
         onError: (Object e, StackTrace stackTrace) {
@@ -96,6 +94,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           (position, bufferedPosition, duration) => PositionData(
               position, bufferedPosition, duration ?? Duration.zero));
 
+  Stream<QueueState> get _queueStateStream => Rx.combineLatest2(
+      _audioHandler.queue,
+      _audioHandler.mediaItem,
+      (queue, mediaItem) => QueueState(queue, mediaItem));
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -106,50 +109,89 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            StreamBuilder<MediaItem?>(
-              stream: _audioHandler.mediaItem,
-              builder: (context, snapshot) {
-                final mediaItem = snapshot.data;
-                if (mediaItem?.artUri == null) return Container();
-                return Image.network(mediaItem?.artUri!.toString() ?? '');
-              },
+            Flexible(
+              flex: 7,
+              fit: FlexFit.tight,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  StreamBuilder<MediaItem?>(
+                    stream: _audioHandler.mediaItem,
+                    builder: (context, snapshot) {
+                      final mediaItem = snapshot.data;
+                      if (mediaItem?.artUri == null) return Container();
+                      return Image.network(mediaItem?.artUri!.toString() ?? '');
+                    },
+                  ),
+                  // Show media item title
+                  StreamBuilder<MediaItem?>(
+                    stream: _audioHandler.mediaItem,
+                    builder: (context, snapshot) {
+                      final mediaItem = snapshot.data;
+                      return Text(
+                        mediaItem?.title ?? '',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                      );
+                    },
+                  ),
+                  // Play/pause/stop buttons.
+                  ControlButtons(_audioHandler, _player),
+                  // A seek bar.
+                  StreamBuilder<PositionData>(
+                    stream: _positionDataStream,
+                    builder: (context, snapshot) {
+                      final positionData = snapshot.data;
+                      return SeekBar(
+                        duration: positionData?.duration ?? Duration.zero,
+                        position: positionData?.position ?? Duration.zero,
+                        bufferedPosition:
+                            positionData?.bufferedPosition ?? Duration.zero,
+                        onChangeEnd: _audioHandler.seek,
+                      );
+                    },
+                  ),
+                  // Display the processing state.
+                  // StreamBuilder<AudioProcessingState>(
+                  //   stream: _audioHandler.playbackState
+                  //       .map((state) => state.processingState)
+                  //       .distinct(),
+                  //   builder: (context, snapshot) {
+                  //     final processingState =
+                  //         snapshot.data ?? AudioProcessingState.idle;
+                  //     return Text(
+                  //         "Processing state: ${processingState.toString().split('.').last}");
+                  //   },
+                  // ),
+                ],
+              ),
             ),
-            // Show media item title
-            StreamBuilder<MediaItem?>(
-              stream: _audioHandler.mediaItem,
-              builder: (context, snapshot) {
-                final mediaItem = snapshot.data;
-                return Text(mediaItem?.title ?? '');
-              },
-            ),
-            // Play/pause/stop buttons.
-            ControlButtons(_player),
-            // A seek bar.
-            StreamBuilder<PositionData>(
-              stream: _positionDataStream,
-              builder: (context, snapshot) {
-                final positionData = snapshot.data;
-                return SeekBar(
-                  duration: positionData?.duration ?? Duration.zero,
-                  position: positionData?.position ?? Duration.zero,
-                  bufferedPosition:
-                      positionData?.bufferedPosition ?? Duration.zero,
-                  onChangeEnd: _player.seek,
-                );
-              },
-            ),
-            // Display the processing state.
-            StreamBuilder<AudioProcessingState>(
-              stream: _audioHandler.playbackState
-                  .map((state) => state.processingState)
-                  .distinct(),
-              builder: (context, snapshot) {
-                final processingState =
-                    snapshot.data ?? AudioProcessingState.idle;
-                return Text(
-                    "Processing state: ${processingState.toString().split('.').last}");
-              },
-            ),
+            Flexible(
+                flex: 3,
+                fit: FlexFit.tight,
+                child: StreamBuilder<QueueState>(
+                    stream: _queueStateStream,
+                    builder: (context, snapshot) {
+                      if (snapshot.data == null) return Container();
+                      return ListView(
+                        shrinkWrap: true,
+                        children: [
+                          for (var i = 0; i < snapshot.data!.queue.length; i++)
+                            ListTile(
+                              leading: Image.network(
+                                  snapshot.data!.queue[i].artUri?.toString() ??
+                                      ''),
+                              title: Text(snapshot.data!.queue[i].title),
+                              subtitle:
+                                  Text(snapshot.data!.queue[i].artist ?? ''),
+                              onTap: () => _audioHandler.skipToQueueItem(i),
+                              selected: snapshot.data!.mediaItem?.id ==
+                                  snapshot.data!.queue[i].id,
+                            ),
+                        ],
+                      );
+                    })),
           ],
         ),
       ),
@@ -197,8 +239,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         .where((x) => x.codec.subtype == 'mp4')
         .withHighestBitrate();
 
-    print(audio);
-
     await _audioHandler.addQueueItem(
       MediaItem(
         id: audio.url.toString(),
@@ -232,17 +272,62 @@ class MediaState {
   MediaState(this.mediaItem, this.position);
 }
 
+class QueueState {
+  final List<MediaItem> queue;
+  final MediaItem? mediaItem;
+
+  QueueState(this.queue, this.mediaItem);
+}
+
 class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
+  final List<MediaItem> nowQueue = [];
+
   AudioPlayerHandler() {
     _player.playbackEventStream.map(_transformEvent).pipe(playbackState);
+    _player.processingStateStream.listen((event) {
+      if (event == ProcessingState.completed) {
+        skipToNext().then((value) => _player.play());
+      }
+    });
     // mediaItem.add(_item);
     // _player.setAudioSource(AudioSource.uri(Uri.parse(_item.id)));
   }
 
   @override
   Future<void> addQueueItem(MediaItem mediaItem) async {
-    await super.addQueueItem(mediaItem);
-    _player.setAudioSource(AudioSource.uri(Uri.parse(mediaItem.id)));
+    nowQueue.add(mediaItem);
+    queue.add(nowQueue);
+    if (this.mediaItem.value == null) {
+      this.mediaItem.add(mediaItem);
+      _player.setAudioSource(AudioSource.uri(Uri.parse(mediaItem.id)));
+    }
+  }
+
+  @override
+  Future<void> skipToQueueItem(int index) async {
+    mediaItem.add(nowQueue[index]);
+    await _player
+        .setAudioSource(AudioSource.uri(Uri.parse(nowQueue[index].id)));
+  }
+
+  @override
+  Future<void> skipToNext() async {
+    if (nowQueue.indexOf(mediaItem.value!) + 1 < nowQueue.length) {
+      var idx = nowQueue.indexOf(mediaItem.value!) + 1;
+      mediaItem.add(nowQueue[idx]);
+      await _player
+          .setAudioSource(AudioSource.uri(Uri.parse(nowQueue[idx].id)));
+    }
+  }
+
+  @override
+  Future<void> skipToPrevious() async {
+    if (nowQueue.indexOf(mediaItem.value!) - 1 >= 0) {
+      var idx = nowQueue.indexOf(mediaItem.value!) - 1;
+      mediaItem.add(nowQueue[idx]);
+      await _player
+          .setAudioSource(AudioSource.uri(Uri.parse(nowQueue[idx].id)));
+    }
   }
 
   @override

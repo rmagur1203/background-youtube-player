@@ -1,12 +1,14 @@
+import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 
 import 'common.dart';
 
 class ControlButtons extends StatelessWidget {
+  final AudioHandler handler;
   final AudioPlayer player;
 
-  const ControlButtons(this.player, {Key? key}) : super(key: key);
+  const ControlButtons(this.handler, this.player, {Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +30,10 @@ class ControlButtons extends StatelessWidget {
               onChanged: player.setVolume,
             );
           },
+        ),
+        IconButton(
+          icon: const Icon(Icons.skip_previous),
+          onPressed: handler.skipToPrevious,
         ),
 
         /// This StreamBuilder rebuilds whenever the player state changes, which
@@ -52,22 +58,26 @@ class ControlButtons extends StatelessWidget {
               return IconButton(
                 icon: const Icon(Icons.play_arrow),
                 iconSize: 64.0,
-                onPressed: player.play,
+                onPressed: handler.play,
               );
             } else if (processingState != ProcessingState.completed) {
               return IconButton(
                 icon: const Icon(Icons.pause),
                 iconSize: 64.0,
-                onPressed: player.pause,
+                onPressed: handler.pause,
               );
             } else {
               return IconButton(
                 icon: const Icon(Icons.replay),
                 iconSize: 64.0,
-                onPressed: () => player.seek(Duration.zero),
+                onPressed: () => handler.seek(Duration.zero),
               );
             }
           },
+        ),
+        IconButton(
+          icon: const Icon(Icons.skip_next),
+          onPressed: handler.skipToNext,
         ),
         // Opens speed slider dialog
         StreamBuilder<double>(
