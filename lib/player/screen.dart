@@ -31,9 +31,7 @@ class _PlayerScreenState extends State<PlayerScreen>
   final TextEditingController _textController = TextEditingController();
   late final AudioPlayerHandler _audioHandler = widget.audioHandler;
   late final AudioPlayer _player = _audioHandler.player;
-  late final DiscordRPC rpc = DiscordRPC(
-    applicationId: '1090967245783572580',
-  );
+  late final DiscordRPC rpc;
 
   ValueNotifier<bool> RichPresenceState = ValueNotifier(false);
 
@@ -44,30 +42,15 @@ class _PlayerScreenState extends State<PlayerScreen>
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.black,
     ));
-    _audioHandler.mediaItem.listen((event) {
-      if (event == null) return;
-      rpc.updatePresence(
-        DiscordPresence(
-          state: event.title,
-          details: event.artist,
-          largeImageKey: 'youtube',
-          largeImageText: 'YouTube',
-          startTimeStamp: DateTime.now().millisecondsSinceEpoch,
-          endTimeStamp: DateTime.now().millisecondsSinceEpoch +
-              event.duration!.inMilliseconds,
-        ),
-      );
-    });
+    if (Platform.isWindows) onWindows();
     _init();
   }
 
-  Future<void> _init() async {
-    final session = await AudioSession.instance;
-    await session.configure(const AudioSessionConfiguration.music());
-    _player.playbackEventStream.listen((event) {},
-        onError: (Object e, StackTrace stackTrace) {
-      print('A stream error occurred: $e');
-    });
+  onWindows() {
+    if (!Platform.isWindows) return;
+    rpc = DiscordRPC(
+      applicationId: '1090967245783572580',
+    );
     rpc.updatePresence(
       DiscordPresence(
         state: 'Empty queue',
@@ -95,6 +78,15 @@ class _PlayerScreenState extends State<PlayerScreen>
               : null,
         ),
       );
+    });
+  }
+
+  Future<void> _init() async {
+    final session = await AudioSession.instance;
+    await session.configure(const AudioSessionConfiguration.music());
+    _player.playbackEventStream.listen((event) {},
+        onError: (Object e, StackTrace stackTrace) {
+      print('A stream error occurred: $e');
     });
   }
 
