@@ -30,8 +30,24 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Audio Service Demo',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      title: 'Youtube',
+      theme: ThemeData(
+        brightness: Brightness.light,
+        primarySwatch: Colors.red,
+        colorScheme: const ColorScheme.light(
+          primary: Colors.red,
+          secondary: Colors.red,
+        ),
+      ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        primarySwatch: Colors.red,
+        colorScheme: const ColorScheme.dark(
+          primary: Colors.red,
+          secondary: Colors.red,
+        ),
+      ),
+      themeMode: ThemeMode.system,
       home: const MainScreen(),
     );
   }
@@ -62,7 +78,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   Future<void> _init() async {
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.music());
-    // Listen to errors during playback.
     _player.playbackEventStream.listen((event) {},
         onError: (Object e, StackTrace stackTrace) {
       print('A stream error occurred: $e');
@@ -72,21 +87,19 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     ambiguate(WidgetsBinding.instance)!.removeObserver(this);
-    // Release decoders and buffers back to the operating system making them
-    // available for other apps to use.
     _player.dispose();
     super.dispose();
   }
 
-  // @override
-  // void didChangeAppLifecycleState(AppLifecycleState state) {
-  //   if (state == AppLifecycleState.paused) {
-  //     // Release the player's resources when not in use. We use "stop" so that
-  //     // if the app resumes later, it will still remember what position to
-  //     // resume from.
-  //     _player.stop();
-  //   }
-  // }
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      // Release the player's resources when not in use. We use "stop" so that
+      // if the app resumes later, it will still remember what position to
+      // resume from.
+      // _player.stop();
+    }
+  }
 
   Stream<PositionData> get _positionDataStream =>
       Rx.combineLatest3<Duration, Duration, Duration?, PositionData>(
@@ -125,7 +138,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                       return Image.network(mediaItem?.artUri!.toString() ?? '');
                     },
                   ),
-                  // Show media item title
                   StreamBuilder<MediaItem?>(
                     stream: _audioHandler.mediaItem,
                     builder: (context, snapshot) {
@@ -138,9 +150,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                       );
                     },
                   ),
-                  // Play/pause/stop buttons.
                   ControlButtons(_audioHandler, _player),
-                  // A seek bar.
                   StreamBuilder<PositionData>(
                     stream: _positionDataStream,
                     builder: (context, snapshot) {
@@ -154,18 +164,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                       );
                     },
                   ),
-                  // Display the processing state.
-                  // StreamBuilder<AudioProcessingState>(
-                  //   stream: _audioHandler.playbackState
-                  //       .map((state) => state.processingState)
-                  //       .distinct(),
-                  //   builder: (context, snapshot) {
-                  //     final processingState =
-                  //         snapshot.data ?? AudioProcessingState.idle;
-                  //     return Text(
-                  //         "Processing state: ${processingState.toString().split('.').last}");
-                  //   },
-                  // ),
                 ],
               ),
             ),
