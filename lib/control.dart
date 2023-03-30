@@ -1,5 +1,6 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:just_audio/just_audio.dart';
 
 import 'common.dart';
@@ -32,6 +33,23 @@ class ControlButtons extends StatelessWidget {
               onChanged: (x) => player.setVolume(x / 100.0),
             );
           },
+        ),
+        StreamBuilder(
+          stream: handler.shuffleModeStream,
+          builder: (context, snapshot) => IconButton(
+            icon: {
+              AudioServiceShuffleMode.none: SvgPicture.asset(
+                'assets/icons/shuffle_wght200.svg',
+              ),
+              AudioServiceShuffleMode.all: const Icon(Icons.shuffle),
+            }[snapshot.data ?? AudioServiceShuffleMode.none]!,
+            onPressed: () => {
+              handler.setShuffleMode({
+                AudioServiceShuffleMode.none: AudioServiceShuffleMode.all,
+                AudioServiceShuffleMode.all: AudioServiceShuffleMode.none,
+              }[snapshot.data ?? AudioServiceShuffleMode.none]!),
+            },
+          ),
         ),
         IconButton(
           icon: const Icon(Icons.skip_previous),
@@ -84,16 +102,18 @@ class ControlButtons extends StatelessWidget {
         StreamBuilder<AudioServiceRepeatMode>(
           stream: handler.repeatModeStream,
           builder: (context, snapshot) => IconButton(
-            icon: Icon({
-              AudioServiceRepeatMode.none: Icons.repeat_one,
-              AudioServiceRepeatMode.one: Icons.repeat,
-              AudioServiceRepeatMode.all: Icons.looks_one_outlined,
-            }[snapshot.data ?? AudioServiceRepeatMode.none]),
+            icon: {
+              AudioServiceRepeatMode.none: SvgPicture.asset(
+                'assets/icons/repeat_wght200.svg',
+              ),
+              AudioServiceRepeatMode.all: Icon(Icons.repeat),
+              AudioServiceRepeatMode.one: Icon(Icons.repeat_one),
+            }[snapshot.data ?? AudioServiceRepeatMode.none]!,
             onPressed: () => {
               handler.setRepeatMode({
-                AudioServiceRepeatMode.none: AudioServiceRepeatMode.one,
-                AudioServiceRepeatMode.one: AudioServiceRepeatMode.all,
-                AudioServiceRepeatMode.all: AudioServiceRepeatMode.none,
+                AudioServiceRepeatMode.none: AudioServiceRepeatMode.all,
+                AudioServiceRepeatMode.all: AudioServiceRepeatMode.one,
+                AudioServiceRepeatMode.one: AudioServiceRepeatMode.none,
               }[snapshot.data ?? AudioServiceRepeatMode.none]!),
             },
           ),
