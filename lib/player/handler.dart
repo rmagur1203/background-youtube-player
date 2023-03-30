@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
@@ -10,20 +11,33 @@ class AudioPlayerHandler extends BaseAudioHandler
     with SeekHandler, QueueHandler {
   BehaviorSubject<AudioServiceRepeatMode> repeatModeStream =
       BehaviorSubject.seeded(AudioServiceRepeatMode.none);
+  BehaviorSubject<AudioServiceShuffleMode> shuffleModeStream =
+      BehaviorSubject.seeded(AudioServiceShuffleMode.none);
   final player = AudioPlayer();
 
   AudioPlayerHandler() {
     player.playbackEventStream.map(_transformEvent).pipe(playbackState);
     player.processingStateStream.listen((event) {
       if (event == ProcessingState.completed) {
-        skipToNext();
+        print(shuffleModeStream.value);
+        if (repeatModeStream.value == AudioServiceRepeatMode.one) {
+          player.seek(Duration.zero).then((value) => player.play());
+        } else if (shuffleModeStream.value == AudioServiceShuffleMode.all) {
+          if (queue.value.length <= 1) return;
+          var index = (queue.value.indexOf(mediaItem.value!) +
+                  Random().nextInt(queue.value.length - 1) +
+                  1) %
+              queue.value.length;
+          skipToQueueItem(index);
+        } else {
+          skipToNext();
+        }
       }
     });
   }
 
   Future<Duration?> setAudioSource(MediaItem mediaItem) async {
     var yt = YoutubeExplode();
-    // yt.videos.streams.getHttpLiveStreamUrl(videoId)
     var stream = await yt.videos.streams.getManifest(mediaItem.id);
     if (stream.streams.isEmpty) {
       try {
@@ -54,6 +68,12 @@ class AudioPlayerHandler extends BaseAudioHandler
   }
 
   @override
+  Future<void> setShuffleMode(AudioServiceShuffleMode shuffleMode) async {
+    await super.setShuffleMode(shuffleMode);
+    shuffleModeStream.add(shuffleMode);
+  }
+
+  @override
   Future<void> addQueueItem(MediaItem mediaItem) async {
     queue.value.add(mediaItem);
     queue.add(queue.value);
@@ -75,16 +95,15 @@ class AudioPlayerHandler extends BaseAudioHandler
   @override
   Future<void> skipToQueueItem(int index) async {
     if (index >= queue.value.length) {
-      if (repeatModeStream.value != AudioServiceRepeatMode.none) {
-        if (repeatModeStream.value == AudioServiceRepeatMode.one) {
-          repeatModeStream.add(AudioServiceRepeatMode.none);
-        }
+      if (repeatModeStream.value == AudioServiceRepeatMode.all) {
         index = index % queue.value.length;
       } else {
         return;
       }
     }
-    // player.stop();
+    if (Platform.isWindows) {
+      player.pause();
+    }
     mediaItem.add(queue.value[index]);
     await setAudioSource(queue.value[index]);
     await player.play();
@@ -92,11 +111,13 @@ class AudioPlayerHandler extends BaseAudioHandler
 
   @override
   Future<void> skipToNext() {
+    if (mediaItem.value == null) return Future(() => null);
     return skipToQueueItem(queue.value.indexOf(mediaItem.value!) + 1);
   }
 
   @override
   Future<void> skipToPrevious() {
+    if (mediaItem.value == null) return Future(() => null);
     return skipToQueueItem(queue.value.indexOf(mediaItem.value!) - 1);
   }
 
@@ -115,17 +136,21 @@ class AudioPlayerHandler extends BaseAudioHandler
   PlaybackState _transformEvent(PlaybackEvent event) {
     return PlaybackState(
       controls: [
+        MediaControl.skipToPrevious,
         MediaControl.rewind,
         if (player.playing) MediaControl.pause else MediaControl.play,
-        MediaControl.stop,
         MediaControl.fastForward,
+        MediaControl.skipToNext,
+        MediaControl.stop,
       ],
       systemActions: const {
         MediaAction.seek,
         MediaAction.seekForward,
         MediaAction.seekBackward,
+        MediaAction.skipToNext,
+        MediaAction.skipToPrevious,
       },
-      androidCompactActionIndices: const [0, 1, 3],
+      androidCompactActionIndices: const [0, 2, 4],
       processingState: const {
         ProcessingState.idle: AudioProcessingState.idle,
         ProcessingState.loading: AudioProcessingState.loading,
