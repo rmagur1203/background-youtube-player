@@ -188,6 +188,7 @@ class _PlayerScreenState extends State<PlayerScreen>
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
+          _textController.clear();
           showDialog(
             context: context,
             builder: (context) => AlertDialog(
@@ -209,6 +210,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                   onPressed: () {
                     Navigator.of(context).pop();
                     addYoutube(_textController.text);
+                    _textController.clear();
                   },
                   child: const Text('ADD'),
                 ),
