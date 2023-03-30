@@ -146,9 +146,8 @@ void showSliderDialog({
   required double min,
   required double max,
   String valueSuffix = '',
-  // TODO: Replace these two by ValueStream.
   required double value,
-  required Stream<double> stream,
+  required Stream<double> valueStream,
   required ValueChanged<double> onChanged,
   int fixed = 1,
 }) {
@@ -157,7 +156,7 @@ void showSliderDialog({
     builder: (context) => AlertDialog(
       title: Text(title, textAlign: TextAlign.center),
       content: StreamBuilder<double>(
-        stream: stream,
+        stream: valueStream,
         builder: (context, snapshot) => SizedBox(
           height: 100.0,
           child: Column(

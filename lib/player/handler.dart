@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:audio_service/audio_service.dart';
-import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
@@ -19,7 +18,6 @@ class AudioPlayerHandler extends BaseAudioHandler
     player.playbackEventStream.map(_transformEvent).pipe(playbackState);
     player.processingStateStream.listen((event) {
       if (event == ProcessingState.completed) {
-        print(shuffleModeStream.value);
         if (repeatModeStream.value == AudioServiceRepeatMode.one) {
           player.seek(Duration.zero).then((value) => player.play());
         } else if (shuffleModeStream.value == AudioServiceShuffleMode.all) {

@@ -1,5 +1,6 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
+import 'package:dart_discord_rpc/dart_discord_rpc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
@@ -28,6 +29,9 @@ class _PlayerScreenState extends State<PlayerScreen>
   final TextEditingController _textController = TextEditingController();
   late final AudioPlayerHandler _audioHandler = widget.audioHandler;
   late final AudioPlayer _player = _audioHandler.player;
+  late final DiscordRPC rpc = DiscordRPC(
+    applicationId: '1090967245783572580',
+  );
 
   @override
   void initState() {
@@ -36,7 +40,21 @@ class _PlayerScreenState extends State<PlayerScreen>
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.black,
     ));
-    print('initState');
+    rpc.start(autoRegister: true);
+    _audioHandler.mediaItem.listen((event) {
+      if (event == null) return;
+      rpc.updatePresence(
+        DiscordPresence(
+          state: event.title,
+          details: event.artist,
+          largeImageKey: 'youtube',
+          largeImageText: 'YouTube',
+          startTimeStamp: DateTime.now().millisecondsSinceEpoch,
+          endTimeStamp: DateTime.now().millisecondsSinceEpoch +
+              event.duration!.inMilliseconds,
+        ),
+      );
+    });
     _init();
   }
 
@@ -46,6 +64,34 @@ class _PlayerScreenState extends State<PlayerScreen>
     _player.playbackEventStream.listen((event) {},
         onError: (Object e, StackTrace stackTrace) {
       print('A stream error occurred: $e');
+    });
+    rpc.updatePresence(
+      DiscordPresence(
+        state: 'Empty queue',
+        details: 'Waiting for music',
+        largeImageKey: 'youtube',
+        largeImageText: 'YouTube',
+        startTimeStamp: DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
+    _player.playerStateStream.listen((event) {
+      if (_audioHandler.mediaItem.value == null) return;
+      rpc.updatePresence(
+        DiscordPresence(
+          state: _audioHandler.mediaItem.value!.title,
+          details: _audioHandler.mediaItem.value!.artist,
+          largeImageKey: 'youtube',
+          largeImageText: 'YouTube',
+          endTimeStamp: _player.playing
+              ? DateTime.now().millisecondsSinceEpoch +
+                  ((_player.duration ??
+                              _audioHandler.mediaItem.value!.duration ??
+                              Duration.zero) -
+                          _player.position)
+                      .inMilliseconds
+              : null,
+        ),
+      );
     });
   }
 
@@ -180,8 +226,6 @@ class _PlayerScreenState extends State<PlayerScreen>
     var yt = YoutubeExplode();
     var isPlaylist = PlaylistId.parsePlaylistId(url) != null;
     var isVideo = VideoId.parseVideoId(url) != null;
-    print(isPlaylist);
-    print(isVideo);
     if (isPlaylist && isVideo) {
       // if both are true, ask to user to choose add playlist or video
       var result = await showDialog<Choice>(
@@ -260,18 +304,4 @@ class _PlayerScreenState extends State<PlayerScreen>
       );
     }
   }
-
-  /// A stream reporting the combined state of the current media item and its
-  /// current position.
-  Stream<MediaState> get _mediaStateStream =>
-      Rx.combineLatest2<MediaItem?, Duration, MediaState>(
-          _audioHandler.mediaItem,
-          AudioService.position,
-          (mediaItem, position) => MediaState(mediaItem, position));
-
-  IconButton _button(IconData iconData, VoidCallback onPressed) => IconButton(
-        icon: Icon(iconData),
-        iconSize: 64.0,
-        onPressed: onPressed,
-      );
 }

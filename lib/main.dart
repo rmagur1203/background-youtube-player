@@ -1,6 +1,5 @@
-import 'dart:math';
-
 import 'package:audio_service/audio_service.dart';
+import 'package:dart_discord_rpc/dart_discord_rpc.dart';
 import 'package:flutter/material.dart';
 
 import 'player/handler.dart';
@@ -17,6 +16,7 @@ void main() async {
       androidNotificationOngoing: true,
     ),
   );
+  DiscordRPC.initialize();
   runApp(const MyApp());
 }
 

@@ -29,7 +29,7 @@ class ControlButtons extends StatelessWidget {
               min: 0.0,
               max: 100.0,
               value: player.volume * 100.0,
-              stream: player.volumeStream.map((event) => event * 100.0),
+              valueStream: player.volumeStream.map((event) => event * 100.0),
               onChanged: (x) => player.setVolume(x / 100.0),
             );
           },
@@ -114,8 +114,8 @@ class ControlButtons extends StatelessWidget {
                   BlendMode.srcIn,
                 ),
               ),
-              AudioServiceRepeatMode.all: Icon(Icons.repeat),
-              AudioServiceRepeatMode.one: Icon(Icons.repeat_one),
+              AudioServiceRepeatMode.all: const Icon(Icons.repeat),
+              AudioServiceRepeatMode.one: const Icon(Icons.repeat_one),
             }[snapshot.data ?? AudioServiceRepeatMode.none]!,
             onPressed: () => {
               handler.setRepeatMode({
@@ -140,7 +140,7 @@ class ControlButtons extends StatelessWidget {
                 min: 0.5,
                 max: 1.5,
                 value: player.speed,
-                stream: player.speedStream,
+                valueStream: player.speedStream,
                 onChanged: player.setSpeed,
               );
             },
