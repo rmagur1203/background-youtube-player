@@ -40,6 +40,10 @@ class ControlButtons extends StatelessWidget {
             icon: {
               AudioServiceShuffleMode.none: SvgPicture.asset(
                 'assets/icons/shuffle_wght200.svg',
+                colorFilter: ColorFilter.mode(
+                  Theme.of(context).iconTheme.color!,
+                  BlendMode.srcIn,
+                ),
               ),
               AudioServiceShuffleMode.all: const Icon(Icons.shuffle),
             }[snapshot.data ?? AudioServiceShuffleMode.none]!,
@@ -105,6 +109,10 @@ class ControlButtons extends StatelessWidget {
             icon: {
               AudioServiceRepeatMode.none: SvgPicture.asset(
                 'assets/icons/repeat_wght200.svg',
+                colorFilter: ColorFilter.mode(
+                  Theme.of(context).iconTheme.color!,
+                  BlendMode.srcIn,
+                ),
               ),
               AudioServiceRepeatMode.all: Icon(Icons.repeat),
               AudioServiceRepeatMode.one: Icon(Icons.repeat_one),
