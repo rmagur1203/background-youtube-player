@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:dart_discord_rpc/dart_discord_rpc.dart';
@@ -33,6 +35,8 @@ class _PlayerScreenState extends State<PlayerScreen>
     applicationId: '1090967245783572580',
   );
 
+  ValueNotifier<bool> RichPresenceState = ValueNotifier(false);
+
   @override
   void initState() {
     super.initState();
@@ -40,7 +44,6 @@ class _PlayerScreenState extends State<PlayerScreen>
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.black,
     ));
-    rpc.start(autoRegister: true);
     _audioHandler.mediaItem.listen((event) {
       if (event == null) return;
       rpc.updatePresence(
@@ -130,6 +133,33 @@ class _PlayerScreenState extends State<PlayerScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Youtube'),
+        actions: [
+          // toggle discord rich presence
+          Platform.isWindows
+              ? ValueListenableBuilder(
+                  valueListenable: RichPresenceState,
+                  builder: (context, value, child) {
+                    return IconButton(
+                      icon: value
+                          ? const Icon(Icons.cast_connected)
+                          : const Icon(Icons.cast),
+                      onPressed: () {
+                        if (value) {
+                          RichPresenceState.value = false;
+                          rpc.shutDown();
+                        } else {
+                          RichPresenceState.value = true;
+                          rpc.start(autoRegister: true);
+                        }
+                      },
+                      tooltip: value
+                          ? 'Disable Rich Presence'
+                          : 'Enable Rich Presence',
+                    );
+                  },
+                )
+              : Container(),
+        ],
       ),
       body: Center(
         child: Column(
