@@ -37,7 +37,7 @@ class _PlayerScreenState extends State<PlayerScreen>
   late final AudioPlayer _player = _audioHandler.player;
   late final DiscordRPC rpc;
 
-  ValueNotifier<bool> RichPresenceState = ValueNotifier(false);
+  ValueNotifier<bool> richPresenceState = ValueNotifier(false);
 
   @override
   void initState() {
@@ -159,7 +159,7 @@ class _PlayerScreenState extends State<PlayerScreen>
           // toggle discord rich presence
           Platform.isWindows
               ? ValueListenableBuilder(
-                  valueListenable: RichPresenceState,
+                  valueListenable: richPresenceState,
                   builder: (context, value, child) {
                     return IconButton(
                       icon: value
@@ -167,10 +167,10 @@ class _PlayerScreenState extends State<PlayerScreen>
                           : const Icon(Icons.cast),
                       onPressed: () {
                         if (value) {
-                          RichPresenceState.value = false;
+                          richPresenceState.value = false;
                           rpc.shutDown();
                         } else {
-                          RichPresenceState.value = true;
+                          richPresenceState.value = true;
                           rpc.start(autoRegister: true);
                         }
                       },

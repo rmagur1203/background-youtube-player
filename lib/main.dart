@@ -1,10 +1,7 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:dart_discord_rpc/dart_discord_rpc.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 
-import 'firebase_options.dart';
 import 'home/screen.dart';
 import 'player/handler.dart';
 import 'player/screen.dart';
@@ -21,10 +18,6 @@ void main() async {
       androidNotificationOngoing: true,
     ),
   );
-  // await Firebase.initializeApp(
-  //   options: DefaultFirebaseOptions.currentPlatform,
-  // );
-  // FirebaseDatabase.instance.setPersistenceEnabled(true);
   DiscordRPC.initialize();
   runApp(const MyApp());
 }

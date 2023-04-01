@@ -19,7 +19,7 @@ class HomeScreen extends StatelessWidget {
               },
               child: const Text('Playlist'),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pushNamed('/player');
