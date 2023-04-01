@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1088790244412",
+    "firebase_url": "https://ytbg-player-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "ytbg-player",
+    "storage_bucket": "ytbg-player.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1088790244412:android:cf4da5233c4e8cd0dca739",
+        "android_client_info": {
+          "package_name": "com.example.youtube"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1088790244412-kua6usim031tqqae5so9fme6oud9df6e.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTFA9pgsFtSJz_RTjvaTRH7_wg7ESgfIs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1088790244412-hed238npt47vbghdr1mfquhp67n7l83m.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1088790244412-mp4qi9s5m29p155rf7c19qrlh37tjgga.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.youtube"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

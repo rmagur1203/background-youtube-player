@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   dart_discord_rpc
+  desktop_webview_auth
   just_audio_windows
 )
 

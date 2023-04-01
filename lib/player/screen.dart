@@ -12,6 +12,7 @@ import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
 import 'common.dart';
 import 'control.dart';
+import 'data.dart';
 import 'handler.dart';
 import 'state.dart';
 
@@ -19,8 +20,10 @@ enum Choice { playlist, video }
 
 class PlayerScreen extends StatefulWidget {
   final AudioPlayerHandler audioHandler;
+  final List<String>? playList;
 
-  const PlayerScreen({Key? key, required this.audioHandler}) : super(key: key);
+  const PlayerScreen({Key? key, required this.audioHandler, this.playList})
+      : super(key: key);
 
   @override
   _PlayerScreenState createState() => _PlayerScreenState();
@@ -28,6 +31,7 @@ class PlayerScreen extends StatefulWidget {
 
 class _PlayerScreenState extends State<PlayerScreen>
     with WidgetsBindingObserver {
+  late final PlayerScreenArguments args;
   final TextEditingController _textController = TextEditingController();
   late final AudioPlayerHandler _audioHandler = widget.audioHandler;
   late final AudioPlayer _player = _audioHandler.player;
@@ -88,6 +92,11 @@ class _PlayerScreenState extends State<PlayerScreen>
         onError: (Object e, StackTrace stackTrace) {
       print('A stream error occurred: $e');
     });
+    if (widget.playList != null) {
+      for (final url in widget.playList ?? []) {
+        await addYoutube(url);
+      }
+    }
   }
 
   @override
@@ -96,6 +105,27 @@ class _PlayerScreenState extends State<PlayerScreen>
     _player.dispose();
     super.dispose();
   }
+
+  // @override
+  // void didChangeDependencies() async {
+  //   args =
+  //       ModalRoute.of(context)?.settings.arguments as PlayerScreenArguments? ??
+  //           PlayerScreenArguments(null);
+  //   final yt = YoutubeExplode();
+  //   for (final url in args.playList ?? []) {
+  //     var info = await yt.videos.get(url);
+  //     await _audioHandler.addQueueItem(
+  //       MediaItem(
+  //         id: VideoId(url).value,
+  //         title: info.title,
+  //         artist: info.author,
+  //         duration: info.duration,
+  //         artUri: Uri.parse(info.thumbnails.standardResUrl),
+  //       ),
+  //     );
+  //   }
+  //   super.didChangeDependencies();
+  // }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
