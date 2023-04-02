@@ -1,6 +1,7 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:dart_discord_rpc/dart_discord_rpc.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 import 'home/screen.dart';
 import 'player/handler.dart';
@@ -46,12 +47,14 @@ class MyApp extends StatelessWidget {
         ),
       ),
       themeMode: ThemeMode.system,
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const HomeScreen(),
-        '/playlist': (context) => const PlaylistScreen(),
-        '/player': (context) => PlayerScreen(audioHandler: audioHandler),
-      },
+      home: HomeScreen(),
+      builder: FToastBuilder(),
+      // initialRoute: '/',
+      // routes: {
+      //   '/': (context) => const HomeScreen(),
+      //   '/playlist': (context) => const PlaylistScreen(),
+      //   '/player': (context) => PlayerScreen(),
+      // },
     );
   }
 }

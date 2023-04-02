@@ -1,19 +1,27 @@
 import 'dart:io';
 
+import 'package:audio_service/audio_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:desktop_webview_auth/desktop_webview_auth.dart';
 import 'package:desktop_webview_auth/google.dart';
 import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/youtube/v3.dart';
 import 'package:googleapis_auth/googleapis_auth.dart' as gapis;
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:rxdart/rxdart.dart';
-import 'package:youtube/main.dart';
+import 'package:youtube_explode_dart/youtube_explode_dart.dart' as ytex;
 
+import '../home/screen.dart';
+import '../main.dart';
+import '../player/handler.dart';
 import '../player/screen.dart';
+import '../toast.dart';
+
+YouTubeApi? youtubeApi;
 
 class PlaylistScreen extends StatefulWidget {
   const PlaylistScreen({Key? key}) : super(key: key);
@@ -23,11 +31,18 @@ class PlaylistScreen extends StatefulWidget {
 }
 
 class _PlaylistScreenState extends State<PlaylistScreen> {
+  final FToast _fToast = FToast();
   // FirebaseDatabase database = FirebaseDatabase.instance;
   // DatabaseReference playlists = FirebaseDatabase.instance.ref('playlist');
-  YouTubeApi? youtubeApi = null;
   late final BehaviorSubject<List<Playlist>> _playlists =
       BehaviorSubject.seeded(<Playlist>[]);
+
+  @override
+  void initState() {
+    super.initState();
+    _fToast.init(context);
+    fetchPlaylist();
+  }
 
   Future<void> login() async {
     if (Platform.isWindows) {
@@ -76,11 +91,33 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
   Future<void> fetchPlaylist() async {
     if (youtubeApi == null) return;
     final data = await youtubeApi!.playlists
-        .list(['id', 'snippet', 'status'], mine: true);
+        .list(['id', 'snippet', 'status'], maxResults: 50, mine: true);
     _playlists.add(data.items ?? []);
   }
 
   Future<void> playList(String playlistId) async {
+    if (youtubeApi == null) return;
+    final result = await youtubeApi!.playlistItems.list(
+        ['id', 'snippet', 'status'],
+        playlistId: playlistId, maxResults: 50);
+    var yt = ytex.YoutubeExplode();
+    final playlist = result.items!
+        .map((e) => e.snippet?.resourceId?.videoId)
+        .where((element) => element != null)
+        .map((e) => yt.videos.get(e!).then((v) => MediaItem(
+              id: v.id.value,
+              title: v.title,
+              artist: v.author,
+              duration: v.duration,
+              artUri: Uri.parse(v.thumbnails.mediumResUrl),
+            )));
+    (homeScreen.currentWidget as BottomNavigationBar).onTap!(2);
+    for (var item in playlist) {
+      audioHandler.addQueueItem(await item);
+    }
+  }
+
+  Future<void> newPlaylist(String playlistId) async {
     if (youtubeApi == null) return;
     final result = await youtubeApi!.playlistItems.list(
         ['id', 'snippet', 'status'],
@@ -90,12 +127,13 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
         .where((element) => element != null)
         .map((e) => e!)
         .toList();
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => PlayerScreen(
-          audioHandler: audioHandler,
           playList: playlist,
+          audioHandler: AudioPlayerHandler(),
         ),
       ),
     );
@@ -130,6 +168,10 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
                           .toLocal())),
                       onTap: () {
                         playList(snapshot.data![index].id!);
+                      },
+                      onLongPress: () {
+                        // playlists.child(snapshot.data![index].id!).remove();
+                        newPlaylist(snapshot.data![index].id!);
                       },
                     );
                   });

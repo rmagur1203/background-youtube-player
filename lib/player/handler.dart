@@ -90,6 +90,12 @@ class AudioPlayerHandler extends BaseAudioHandler
     }
   }
 
+  Future<void> clearQueue() async {
+    await player.stop();
+    queue.add([]);
+    mediaItem.add(null);
+  }
+
   @override
   Future<void> skipToQueueItem(int index) async {
     if (index >= queue.value.length) {

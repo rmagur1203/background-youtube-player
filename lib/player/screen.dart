@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dart_discord_rpc/dart_discord_rpc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,6 +11,7 @@ import 'package:rxdart/rxdart.dart';
 import 'package:youtube/player/queue.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
+import '../main.dart';
 import 'common.dart';
 import 'control.dart';
 import 'data.dart';
@@ -19,10 +21,10 @@ import 'state.dart';
 enum Choice { playlist, video }
 
 class PlayerScreen extends StatefulWidget {
-  final AudioPlayerHandler audioHandler;
+  final AudioPlayerHandler? audioHandler;
   final List<String>? playList;
 
-  const PlayerScreen({Key? key, required this.audioHandler, this.playList})
+  const PlayerScreen({Key? key, this.playList, this.audioHandler})
       : super(key: key);
 
   @override
@@ -33,7 +35,8 @@ class _PlayerScreenState extends State<PlayerScreen>
     with WidgetsBindingObserver {
   late final PlayerScreenArguments args;
   final TextEditingController _textController = TextEditingController();
-  late final AudioPlayerHandler _audioHandler = widget.audioHandler;
+  late final AudioPlayerHandler _audioHandler =
+      widget.audioHandler ?? audioHandler;
   late final AudioPlayer _player = _audioHandler.player;
   late final DiscordRPC rpc;
 
@@ -181,6 +184,13 @@ class _PlayerScreenState extends State<PlayerScreen>
                   },
                 )
               : Container(),
+          IconButton(
+            icon: const Icon(Icons.clear),
+            onPressed: () async {
+              await _audioHandler.clearQueue();
+            },
+            tooltip: 'Clear queue',
+          ),
         ],
       ),
       body: Center(
@@ -198,7 +208,14 @@ class _PlayerScreenState extends State<PlayerScreen>
                     builder: (context, snapshot) {
                       final mediaItem = snapshot.data;
                       if (mediaItem?.artUri == null) return Container();
-                      return Image.network(mediaItem?.artUri!.toString() ?? '');
+                      return CachedNetworkImage(
+                        imageUrl: mediaItem?.artUri!.toString() ?? '',
+                        placeholder: (context, url) => const Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                        errorWidget: (context, url, error) =>
+                            const Icon(Icons.error),
+                      );
                     },
                   ),
                   StreamBuilder<MediaItem?>(
