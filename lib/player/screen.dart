@@ -105,7 +105,7 @@ class _PlayerScreenState extends State<PlayerScreen>
   @override
   void dispose() {
     ambiguate(WidgetsBinding.instance)!.removeObserver(this);
-    _player.dispose();
+    if (widget.audioHandler != null) _player.dispose();
     super.dispose();
   }
 
