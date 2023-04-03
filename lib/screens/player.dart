@@ -8,15 +8,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:rxdart/rxdart.dart';
-import 'package:youtube/player/queue.dart';
+import 'package:youtube/widgets/queue.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
 import '../main.dart';
-import 'common.dart';
-import 'control.dart';
-import 'data.dart';
-import 'handler.dart';
-import 'state.dart';
+import '../utils/common.dart';
+import '../utils/control.dart';
+import '../models/player.dart';
+import '../services/handler.dart';
+import '../models/state.dart';
 
 enum Choice { playlist, video }
 

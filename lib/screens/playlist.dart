@@ -15,10 +15,10 @@ import 'package:intl/intl.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart' as ytex;
 
-import '../home/screen.dart';
+import 'home.dart';
 import '../main.dart';
-import '../player/handler.dart';
-import '../player/screen.dart';
+import '../services/handler.dart';
+import 'player.dart';
 
 YouTubeApi? youtubeApi;
 

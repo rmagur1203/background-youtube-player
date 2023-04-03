@@ -2,9 +2,10 @@ import 'package:audio_service/audio_service.dart';
 import 'package:dart_discord_rpc/dart_discord_rpc.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:sizer/sizer.dart';
 
-import 'home/screen.dart';
-import 'player/handler.dart';
+import 'screens/home.dart';
+import 'services/handler.dart';
 
 late final AudioPlayerHandler audioHandler;
 
@@ -26,6 +27,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return Sizer(builder: builder);
+  }
+
+  Widget builder(
+      BuildContext context, Orientation orientation, DeviceType deviceType) {
     return MaterialApp(
       title: 'Youtube',
       theme: ThemeData(

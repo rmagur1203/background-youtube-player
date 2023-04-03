@@ -5,7 +5,7 @@ import 'package:rxdart/rxdart.dart';
 import 'package:youtube/main.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
-import '../toast.dart';
+import '../widgets/toast.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({Key? key}) : super(key: key);

@@ -4,7 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:just_audio/just_audio.dart';
 
 import 'common.dart';
-import 'handler.dart';
+import '../services/handler.dart';
 
 class ControlButtons extends StatelessWidget {
   final AudioPlayerHandler handler;

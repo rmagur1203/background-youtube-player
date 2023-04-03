@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:youtube/screens/playlistDetail.dart';
 
-import '../player/screen.dart';
-import '../playlist/screen.dart';
-import '../search/screen.dart';
+import 'player.dart';
+import 'playlist.dart';
+import 'search.dart';
 
 GlobalKey homeScreen = GlobalKey(debugLabel: 'btm_app_bar');
 
@@ -20,6 +21,7 @@ class HomeScreenState extends State<HomeScreen> {
     const PlaylistScreen(),
     const SearchScreen(),
     const PlayerScreen(),
+    const PlaylistDetail(),
   ];
 
   void _onTap(int index) {
@@ -48,7 +50,12 @@ class HomeScreenState extends State<HomeScreen> {
             BottomNavigationBarItem(
               icon: Icon(Icons.play_circle_fill),
               label: 'Player',
-            )
+            ),
+            // for test
+            BottomNavigationBarItem(
+              icon: Icon(Icons.developer_mode),
+              label: 'Dev',
+            ),
           ],
           currentIndex: _selectedIndex,
           onTap: _onTap,
