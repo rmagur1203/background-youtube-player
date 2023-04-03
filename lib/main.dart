@@ -5,8 +5,6 @@ import 'package:fluttertoast/fluttertoast.dart';
 
 import 'home/screen.dart';
 import 'player/handler.dart';
-import 'player/screen.dart';
-import 'playlist/screen.dart';
 
 late final AudioPlayerHandler audioHandler;
 
@@ -47,7 +45,7 @@ class MyApp extends StatelessWidget {
         ),
       ),
       themeMode: ThemeMode.system,
-      home: HomeScreen(),
+      home: const HomeScreen(),
       builder: FToastBuilder(),
       // initialRoute: '/',
       // routes: {

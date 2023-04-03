@@ -19,7 +19,6 @@ import '../home/screen.dart';
 import '../main.dart';
 import '../player/handler.dart';
 import '../player/screen.dart';
-import '../toast.dart';
 
 YouTubeApi? youtubeApi;
 
@@ -27,10 +26,10 @@ class PlaylistScreen extends StatefulWidget {
   const PlaylistScreen({Key? key}) : super(key: key);
 
   @override
-  _PlaylistScreenState createState() => _PlaylistScreenState();
+  PlaylistScreenState createState() => PlaylistScreenState();
 }
 
-class _PlaylistScreenState extends State<PlaylistScreen> {
+class PlaylistScreenState extends State<PlaylistScreen> {
   final FToast _fToast = FToast();
   // FirebaseDatabase database = FirebaseDatabase.instance;
   // DatabaseReference playlists = FirebaseDatabase.instance.ref('playlist');
@@ -69,7 +68,7 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
       );
       youtubeApi = YouTubeApi(httpClient);
     } else {
-      GoogleSignIn _googleSignIn = GoogleSignIn(
+      GoogleSignIn googleSignIn = GoogleSignIn(
         clientId:
             '1088790244412-kua6usim031tqqae5so9fme6oud9df6e.apps.googleusercontent.com',
         scopes: [
@@ -78,10 +77,10 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
           YouTubeApi.youtubeForceSslScope
         ],
       );
-      var httpClient = (await _googleSignIn.authenticatedClient());
+      var httpClient = (await googleSignIn.authenticatedClient());
       if (httpClient == null) {
-        await _googleSignIn.signIn();
-        httpClient = (await _googleSignIn.authenticatedClient())!;
+        await googleSignIn.signIn();
+        httpClient = (await googleSignIn.authenticatedClient())!;
       }
       youtubeApi = YouTubeApi(httpClient);
     }

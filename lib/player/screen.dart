@@ -28,10 +28,10 @@ class PlayerScreen extends StatefulWidget {
       : super(key: key);
 
   @override
-  _PlayerScreenState createState() => _PlayerScreenState();
+  PlayerScreenState createState() => PlayerScreenState();
 }
 
-class _PlayerScreenState extends State<PlayerScreen>
+class PlayerScreenState extends State<PlayerScreen>
     with WidgetsBindingObserver {
   late final PlayerScreenArguments args;
   final TextEditingController _textController = TextEditingController();
@@ -91,10 +91,6 @@ class _PlayerScreenState extends State<PlayerScreen>
   Future<void> _init() async {
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.music());
-    _player.playbackEventStream.listen((event) {},
-        onError: (Object e, StackTrace stackTrace) {
-      print('A stream error occurred: $e');
-    });
     if (widget.playList != null) {
       for (final url in widget.playList ?? []) {
         await addYoutube(url);

@@ -43,7 +43,6 @@ class AudioPlayerHandler extends BaseAudioHandler
             await yt.videos.streams.getHttpLiveStreamUrl(VideoId(mediaItem.id));
         if (Platform.isWindows) {
           // Windows is currently not supported
-          print('Windows is currently not supported');
           return null;
         }
         return await player.setAudioSource(HlsAudioSource(Uri.parse(stream)));
