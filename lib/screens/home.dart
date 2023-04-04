@@ -38,6 +38,8 @@ class HomeScreenState extends State<HomeScreen> {
         ),
         bottomNavigationBar: BottomNavigationBar(
           key: homeScreen,
+          fixedColor: Colors.red,
+          unselectedItemColor: Colors.grey,
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.playlist_play),
