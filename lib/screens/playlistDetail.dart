@@ -2,16 +2,62 @@ import 'dart:ui';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:googleapis/youtube/v3.dart';
 import 'package:sizer/sizer.dart';
 
-final data = {
-  'thumbnail':
-      'https://i.ytimg.com/vi/2D0B3wTjE20/hqdefault.jpg?sqp=-oaymwEXCNACELwBSFryq4qpAwkIARUAAIhCGAE=&rs=AOn4CLDohjjLp73CZghHR2nWzVQP1FKtGA',
-  'name': '노래2',
-  'author': '이동식',
-  'description': null,
-  'owner': false,
-};
+final Playlist data = Playlist(
+  kind: 'youtube#playlist',
+  id: 'PL4o29bINVT4EG_y-k5jGoOu3-Am8Nvi10',
+  snippet: PlaylistSnippet(
+    publishedAt: DateTime.now(),
+    channelId: 'UC4R8DWoMoI7CAwX8_LjQHig',
+    title: 'Test Playlist',
+    description: 'Test Playlist Description',
+    thumbnails: ThumbnailDetails(
+      default_: Thumbnail(
+        url: 'https://i.ytimg.com/vi/2g811Eo7K8U/default.jpg',
+        width: 120,
+        height: 90,
+      ),
+      medium: Thumbnail(
+        url: 'https://i.ytimg.com/vi/2g811Eo7K8U/mqdefault.jpg',
+        width: 320,
+        height: 180,
+      ),
+      high: Thumbnail(
+        url: 'https://i.ytimg.com/vi/2g811Eo7K8U/hqdefault.jpg',
+        width: 480,
+        height: 360,
+      ),
+      standard: Thumbnail(
+        url: 'https://i.ytimg.com/vi/2g811Eo7K8U/sddefault.jpg',
+        width: 640,
+        height: 480,
+      ),
+      maxres: Thumbnail(
+        url: 'https://i.ytimg.com/vi/2g811Eo7K8U/maxresdefault.jpg',
+        width: 1280,
+        height: 720,
+      ),
+    ),
+    channelTitle: 'Test Channel',
+    localized: PlaylistLocalization(
+      title: 'Test Playlist',
+      description: 'Test Playlist Description',
+    ),
+    defaultLanguage: 'en',
+    tags: <String>['test', 'playlist'],
+    thumbnailVideoId: '2g811Eo7K8U',
+  ),
+  contentDetails: PlaylistContentDetails(
+    itemCount: 0,
+  ),
+  status: PlaylistStatus(privacyStatus: 'unlisted'),
+  player: PlaylistPlayer(
+    embedHtml:
+        '<iframe width="640" height="360" src="https://www.youtube.com/embed/videoseries?list=PL4o29bINVT4EG_y-k5jGoOu3-Am8Nvi10" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>',
+  ),
+);
 
 class PlaylistDetail extends StatefulWidget {
   const PlaylistDetail({Key? key}) : super(key: key);
@@ -21,6 +67,12 @@ class PlaylistDetail extends StatefulWidget {
 }
 
 class PlaylistDetailState extends State<PlaylistDetail> {
+  String get thumbnailUrl => data.snippet?.thumbnails?.high?.url ?? '';
+  String get title => data.snippet?.title ?? '';
+  String get description => data.snippet?.description ?? '';
+  String get channelTitle => data.snippet?.channelTitle ?? '';
+  String get itemCount => data.contentDetails?.itemCount?.toString() ?? '';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,7 +103,7 @@ class PlaylistDetailState extends State<PlaylistDetail> {
             opacity: 0.7,
             child: CachedNetworkImage(
               alignment: Alignment.topCenter,
-              imageUrl: data['thumbnail']!.toString(),
+              imageUrl: thumbnailUrl,
               fit: BoxFit.fitWidth,
             ),
           ),
@@ -133,7 +185,7 @@ class PlaylistDetailState extends State<PlaylistDetail> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: CachedNetworkImage(
-        imageUrl: data['thumbnail']!.toString(),
+        imageUrl: thumbnailUrl,
         fit: BoxFit.cover,
       ),
     );
@@ -148,14 +200,14 @@ class PlaylistDetailState extends State<PlaylistDetail> {
           children: [
             Expanded(
               child: Text(
-                data['name']!.toString(),
+                title,
                 style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
                     fontWeight: FontWeight.bold),
               ),
             ),
-            if (data['owner'] as bool) ...[
+            if (false) ...[
               const SizedBox(width: 8),
               const Icon(Icons.edit_outlined)
             ],
@@ -165,7 +217,7 @@ class PlaylistDetailState extends State<PlaylistDetail> {
         Column(
           children: [
             Text(
-              data['author']!.toString(),
+              channelTitle,
               style: const TextStyle(
                   color: Colors.white,
                   fontSize: 14,
@@ -175,13 +227,13 @@ class PlaylistDetailState extends State<PlaylistDetail> {
             const SizedBox(height: 12),
           ],
         ),
-        if (data['owner'] as bool)
+        if (false)
           Row(
             mainAxisSize: MainAxisSize.max,
             children: [
               Expanded(
                 child: Text(
-                  data['description']?.toString() ?? '설명 없음',
+                  description ?? '설명 없음',
                   style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,

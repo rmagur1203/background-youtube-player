@@ -34,8 +34,10 @@ class HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
         body: SafeArea(
-          child: _widgetOptions.elementAt(_selectedIndex),
-        ),
+            child: IndexedStack(
+          index: _selectedIndex,
+          children: _widgetOptions,
+        )),
         bottomNavigationBar: BottomNavigationBar(
           key: homeScreen,
           fixedColor: Colors.red,

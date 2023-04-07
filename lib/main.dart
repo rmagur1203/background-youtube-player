@@ -53,12 +53,6 @@ class MyApp extends StatelessWidget {
       themeMode: ThemeMode.system,
       home: const HomeScreen(),
       builder: FToastBuilder(),
-      // initialRoute: '/',
-      // routes: {
-      //   '/': (context) => const HomeScreen(),
-      //   '/playlist': (context) => const PlaylistScreen(),
-      //   '/player': (context) => PlayerScreen(),
-      // },
     );
   }
 }
