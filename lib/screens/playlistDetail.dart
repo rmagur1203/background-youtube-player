@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:googleapis/youtube/v3.dart';
 import 'package:sizer/sizer.dart';
 
+final Color _overlay_button_secondary = Colors.black.withOpacity(0.1);
+
 final Playlist data = Playlist(
   kind: 'youtube#playlist',
   id: 'PL4o29bINVT4EG_y-k5jGoOu3-Am8Nvi10',
@@ -207,43 +209,100 @@ class PlaylistDetailState extends State<PlaylistDetail> {
                     fontWeight: FontWeight.bold),
               ),
             ),
-            if (false) ...[
-              const SizedBox(width: 8),
-              const Icon(Icons.edit_outlined)
-            ],
           ],
         ),
         const SizedBox(height: 16),
-        Column(
+        Row(
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Text(
-              channelTitle,
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 4),
-            const SizedBox(height: 12),
-          ],
-        ),
-        if (false)
-          Row(
-            mainAxisSize: MainAxisSize.max,
-            children: [
-              Expanded(
-                child: Text(
-                  description ?? '설명 없음',
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400),
-                ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    channelTitle,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 4),
+                  IntrinsicWidth(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text(
+                          '동영상 $itemCount개',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '조회수 $itemCount회',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(width: 4),
+                        const Text(
+                          '오늘 업데이트됨',
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(width: 4),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
               ),
-              const SizedBox(width: 8),
-              const Icon(Icons.edit_outlined)
-            ],
-          ),
+            ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(width: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: _overlay_button_secondary,
+                    shape: BoxShape.circle,
+                  ),
+                  width: 36,
+                  height: 36,
+                  alignment: Alignment.center,
+                  child: IconButton(
+                    padding: const EdgeInsets.all(0),
+                    onPressed: () {},
+                    iconSize: 20,
+                    icon: const Icon(Icons.playlist_add),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: _overlay_button_secondary,
+                    shape: BoxShape.circle,
+                  ),
+                  width: 36,
+                  height: 36,
+                  alignment: Alignment.center,
+                  child: IconButton(
+                    padding: const EdgeInsets.all(0),
+                    onPressed: () {},
+                    iconSize: 20,
+                    icon: const Icon(Icons.share),
+                  ),
+                ),
+                const SizedBox(width: 8)
+              ],
+            )
+          ],
+        )
       ],
     );
   }
