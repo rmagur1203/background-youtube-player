@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:youtube/screens/playlistDetail.dart';
+import 'package:youtube/screens/playlist_detail.dart';
 
 import 'player.dart';
 import 'playlist.dart';
