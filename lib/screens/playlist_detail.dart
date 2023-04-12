@@ -196,6 +196,7 @@ class PlaylistDetailState extends State<PlaylistDetail> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: _background,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -216,77 +217,71 @@ class PlaylistDetailState extends State<PlaylistDetail> {
 
   Widget playlistInfo() {
     return IntrinsicHeight(
-        child: Stack(children: [
-      Stack(
+      child: Stack(
         fit: StackFit.expand,
         children: [
-          Opacity(
-            opacity: 0.7,
-            child: CachedNetworkImage(
-              alignment: Alignment.topCenter,
-              imageUrl: thumbnailUrl,
-              fit: BoxFit.fitWidth,
-            ),
-          ),
-          ClipRRect(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: const <double>[0, 0.33, 1],
-                    colors: gradientColors,
-                    tileMode: TileMode.mirror,
+          Expanded(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Opacity(
+                  opacity: 0.7,
+                  child: CachedNetworkImage(
+                    alignment: Alignment.topCenter,
+                    imageUrl: thumbnailUrl,
+                    fit: BoxFit.fitWidth,
                   ),
                 ),
-              ),
+                ClipRRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          stops: const <double>[0, 0.33, 1],
+                          colors: gradientColors,
+                          tileMode: TileMode.mirror,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
-      Container(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Column(
-            children: [
-              const SizedBox(height: 24),
-              thumbnail(),
-              const SizedBox(height: 16),
-              metadata(),
-            ],
-          ))
-    ]));
-  }
-
-  Widget queue() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: _background,
-      ),
-      child: Column(
-        children: [
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              return PlaylistItemWidget(
-                item: items[index],
-                onTap: () {},
-              );
-            },
-          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Column(
+              children: [
+                const SizedBox(height: 24),
+                thumbnail(),
+                const SizedBox(height: 16),
+                metadata(),
+              ],
+            ),
+          )
         ],
       ),
     );
-    return SizedBox(
-      height: 100.h,
-      child: Container(
-        decoration: const BoxDecoration(
-          color: _background,
+  }
+
+  Widget queue() {
+    return Column(
+      children: [
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            return PlaylistItemWidget(
+              item: items[index],
+              onTap: () {},
+            );
+          },
         ),
-      ),
+      ],
     );
   }
 
@@ -314,12 +309,17 @@ class PlaylistDetailState extends State<PlaylistDetail> {
 
   Widget thumbnail() {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: CachedNetworkImage(
-        imageUrl: thumbnailUrl,
-        fit: BoxFit.cover,
-      ),
-    );
+        borderRadius: BorderRadius.circular(12),
+        // child: Image.network(
+        //   thumbnailUrl,
+        //   // fit: BoxFit.cover,
+        // ),
+        child: IntrinsicHeight(
+          child: CachedNetworkImage(
+            imageUrl: thumbnailUrl,
+            fit: BoxFit.cover,
+          ),
+        ));
   }
 
   Widget metadata() {
