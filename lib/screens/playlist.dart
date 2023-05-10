@@ -103,9 +103,9 @@ class PlaylistScreenState extends State<PlaylistScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text('Playlist'),
-        ),
+        // appBar: AppBar(
+        //   title: const Text('Playlist'),
+        // ),
         body: Center(
             child: StreamBuilder<List<Playlist>>(
           stream: _playlists,

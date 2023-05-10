@@ -224,7 +224,11 @@ class PlaylistDetailState extends State<PlaylistDetail> {
     Navigator.pop(context);
     (homeScreen.currentWidget as BottomNavigationBar).onTap!(2);
     for (var item in playlist) {
-      audioHandler.addQueueItem(await item);
+      try {
+        audioHandler.addQueueItem(await item);
+      } catch (e) {
+        print(e);
+      }
     }
     // List<MediaItem> videos = items.map((item) {
 
@@ -253,20 +257,22 @@ class PlaylistDetailState extends State<PlaylistDetail> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _background,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          SingleChildScrollView(
-              scrollDirection: Axis.vertical,
-              child: Column(
-                children: [
-                  playlistInfo(),
-                  Container(height: 8, color: _background),
-                  queue(),
-                ],
-              )),
-          topBar(),
-        ],
+      body: SafeArea(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            SingleChildScrollView(
+                scrollDirection: Axis.vertical,
+                child: Column(
+                  children: [
+                    playlistInfo(),
+                    Container(height: 8, color: _background),
+                    queue(),
+                  ],
+                )),
+            topBar(),
+          ],
+        ),
       ),
     );
   }

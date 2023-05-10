@@ -40,6 +40,9 @@ class PlayerScreenState extends State<PlayerScreen>
   late final AudioPlayer _player = _audioHandler.player;
   late final DiscordRPC rpc;
 
+  static const int controlBoxRatio = 6;
+  static const int queueBoxRatio = 4;
+
   ValueNotifier<bool> richPresenceState = ValueNotifier(false);
 
   @override
@@ -128,107 +131,129 @@ class PlayerScreenState extends State<PlayerScreen>
       _audioHandler.mediaItem,
       (queue, mediaItem) => QueueState(queue, mediaItem));
 
+  Widget topBar() {
+    return Positioned(
+      top: 0,
+      child: ConstrainedBox(
+        constraints:
+            BoxConstraints(maxWidth: MediaQuery.of(context).size.width),
+        child: Row(
+          children: [
+            Flexible(flex: 1, child: Container()),
+            Platform.isWindows
+                ? ValueListenableBuilder(
+                    valueListenable: richPresenceState,
+                    builder: (context, value, child) {
+                      return IconButton(
+                        icon: value
+                            ? const Icon(Icons.cast_connected)
+                            : const Icon(Icons.cast),
+                        onPressed: () {
+                          if (value) {
+                            richPresenceState.value = false;
+                            rpc.shutDown();
+                          } else {
+                            richPresenceState.value = true;
+                            rpc.start(autoRegister: true);
+                          }
+                        },
+                        tooltip: value
+                            ? 'Disable Rich Presence'
+                            : 'Enable Rich Presence',
+                      );
+                    },
+                  )
+                : Container(),
+            IconButton(
+              icon: const Icon(Icons.clear),
+              onPressed: () async {
+                await _audioHandler.clearQueue();
+              },
+              tooltip: 'Clear queue',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Youtube'),
-        actions: [
-          // toggle discord rich presence
-          Platform.isWindows
-              ? ValueListenableBuilder(
-                  valueListenable: richPresenceState,
-                  builder: (context, value, child) {
-                    return IconButton(
-                      icon: value
-                          ? const Icon(Icons.cast_connected)
-                          : const Icon(Icons.cast),
-                      onPressed: () {
-                        if (value) {
-                          richPresenceState.value = false;
-                          rpc.shutDown();
-                        } else {
-                          richPresenceState.value = true;
-                          rpc.start(autoRegister: true);
-                        }
-                      },
-                      tooltip: value
-                          ? 'Disable Rich Presence'
-                          : 'Enable Rich Presence',
-                    );
-                  },
-                )
-              : Container(),
-          IconButton(
-            icon: const Icon(Icons.clear),
-            onPressed: () async {
-              await _audioHandler.clearQueue();
-            },
-            tooltip: 'Clear queue',
-          ),
-        ],
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Flexible(
-              flex: 7,
-              fit: FlexFit.tight,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  StreamBuilder<MediaItem?>(
-                    stream: _audioHandler.mediaItem,
-                    builder: (context, snapshot) {
-                      final mediaItem = snapshot.data;
-                      if (mediaItem?.artUri == null) return Container();
-                      return CachedNetworkImage(
-                        imageUrl: mediaItem?.artUri!.toString() ?? '',
-                        placeholder: (context, url) => const Center(
-                          child: CircularProgressIndicator(),
-                        ),
-                        errorWidget: (context, url, error) =>
-                            const Icon(Icons.error),
-                      );
-                    },
+      // appBar: AppBar(
+      //   // title: const Text('Youtube'),
+      //   backgroundColor: Colors.transparent,
+      //   shadowColor: Colors.transparent,
+      //   actions: [
+      //     // toggle discord rich presence
+      //   ],
+      // ),
+      body: SafeArea(
+        child: Stack(children: [
+          topBar(),
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Flexible(
+                  flex: controlBoxRatio,
+                  fit: FlexFit.tight,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      StreamBuilder<MediaItem?>(
+                        stream: _audioHandler.mediaItem,
+                        builder: (context, snapshot) {
+                          final mediaItem = snapshot.data;
+                          if (mediaItem?.artUri == null) return Container();
+                          return CachedNetworkImage(
+                            imageUrl: mediaItem?.artUri!.toString() ?? '',
+                            placeholder: (context, url) => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                            errorWidget: (context, url, error) =>
+                                const Icon(Icons.error),
+                          );
+                        },
+                      ),
+                      StreamBuilder<MediaItem?>(
+                        stream: _audioHandler.mediaItem,
+                        builder: (context, snapshot) {
+                          final mediaItem = snapshot.data;
+                          return Text(
+                            mediaItem?.title ?? '',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          );
+                        },
+                      ),
+                      ControlButtons(_audioHandler, _player),
+                      StreamBuilder<PositionData>(
+                        stream: _positionDataStream,
+                        builder: (context, snapshot) {
+                          final positionData = snapshot.data;
+                          return SeekBar(
+                            duration: positionData?.duration ?? Duration.zero,
+                            position: positionData?.position ?? Duration.zero,
+                            bufferedPosition:
+                                positionData?.bufferedPosition ?? Duration.zero,
+                            onChangeEnd: _audioHandler.seek,
+                          );
+                        },
+                      ),
+                    ],
                   ),
-                  StreamBuilder<MediaItem?>(
-                    stream: _audioHandler.mediaItem,
-                    builder: (context, snapshot) {
-                      final mediaItem = snapshot.data;
-                      return Text(
-                        mediaItem?.title ?? '',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
-                      );
-                    },
-                  ),
-                  ControlButtons(_audioHandler, _player),
-                  StreamBuilder<PositionData>(
-                    stream: _positionDataStream,
-                    builder: (context, snapshot) {
-                      final positionData = snapshot.data;
-                      return SeekBar(
-                        duration: positionData?.duration ?? Duration.zero,
-                        position: positionData?.position ?? Duration.zero,
-                        bufferedPosition:
-                            positionData?.bufferedPosition ?? Duration.zero,
-                        onChangeEnd: _audioHandler.seek,
-                      );
-                    },
-                  ),
-                ],
-              ),
+                ),
+                Flexible(
+                    flex: queueBoxRatio,
+                    fit: FlexFit.tight,
+                    child: PlayerQueueWidget(
+                        stream: _queueStateStream, handler: _audioHandler)),
+              ],
             ),
-            Flexible(
-                flex: 3,
-                fit: FlexFit.tight,
-                child: PlayerQueueWidget(
-                    stream: _queueStateStream, handler: _audioHandler)),
-          ],
-        ),
+          )
+        ]),
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'add',
