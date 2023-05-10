@@ -21,7 +21,6 @@ class HomeScreenState extends State<HomeScreen> {
     const PlaylistScreen(),
     const SearchScreen(),
     const PlayerScreen(),
-    const PlaylistDetail(),
   ];
 
   void _onTap(int index) {
@@ -54,11 +53,6 @@ class HomeScreenState extends State<HomeScreen> {
             BottomNavigationBarItem(
               icon: Icon(Icons.play_circle_fill),
               label: 'Player',
-            ),
-            // for test
-            BottomNavigationBarItem(
-              icon: Icon(Icons.developer_mode),
-              label: 'Dev',
             ),
           ],
           currentIndex: _selectedIndex,

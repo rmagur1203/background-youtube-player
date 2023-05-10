@@ -13,8 +13,10 @@ import 'package:googleapis_auth/googleapis_auth.dart' as gapis;
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:youtube/screens/playlist_detail.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart' as ytex;
 
+import '../utils/google_signin.dart';
 import 'home.dart';
 import '../main.dart';
 import '../services/handler.dart';
@@ -44,53 +46,15 @@ class PlaylistScreenState extends State<PlaylistScreen> {
   }
 
   Future<void> login() async {
-    if (Platform.isWindows) {
-      final googleSignInArgs = GoogleSignInArgs(
-        clientId:
-            '1088790244412-kua6usim031tqqae5so9fme6oud9df6e.apps.googleusercontent.com',
-        redirectUri: 'https://ytbg-player.firebaseapp.com/__/auth/handler',
-        scope: 'https://www.googleapis.com/auth/userinfo.email '
-            '${YouTubeApi.youtubeScope} '
-            '${YouTubeApi.youtubeForceSslScope} ',
-      );
-      final googleAuth = await DesktopWebviewAuth.signIn(googleSignInArgs);
-      final httpClient = gapis.authenticatedClient(
-        http.Client(),
-        gapis.AccessCredentials(
-          gapis.AccessToken(
-            'Bearer',
-            googleAuth!.accessToken!,
-            DateTime.now().toUtc().add(const Duration(days: 365)),
-          ),
-          null,
-          [YouTubeApi.youtubeScope, YouTubeApi.youtubeForceSslScope],
-        ),
-      );
-      youtubeApi = YouTubeApi(httpClient);
-    } else {
-      GoogleSignIn googleSignIn = GoogleSignIn(
-        clientId:
-            '1088790244412-kua6usim031tqqae5so9fme6oud9df6e.apps.googleusercontent.com',
-        scopes: [
-          'email',
-          YouTubeApi.youtubeScope,
-          YouTubeApi.youtubeForceSslScope
-        ],
-      );
-      var httpClient = (await googleSignIn.authenticatedClient());
-      if (httpClient == null) {
-        await googleSignIn.signIn();
-        httpClient = (await googleSignIn.authenticatedClient())!;
-      }
-      youtubeApi = YouTubeApi(httpClient);
-    }
+    youtubeApi = YouTubeApi(await googleSignIn());
     fetchPlaylist();
   }
 
   Future<void> fetchPlaylist() async {
     if (youtubeApi == null) return;
-    final data = await youtubeApi!.playlists
-        .list(['id', 'snippet', 'status'], maxResults: 50, mine: true);
+    final data = await youtubeApi!.playlists.list(
+        ['id', 'snippet', 'status', 'contentDetails'],
+        maxResults: 50, mine: true);
     _playlists.add(data.items ?? []);
   }
 
@@ -116,26 +80,20 @@ class PlaylistScreenState extends State<PlaylistScreen> {
     }
   }
 
-  Future<void> newPlaylist(String playlistId) async {
+  Future<void> newPlaylist(Playlist playlist) async {
     if (youtubeApi == null) return;
     final result = await youtubeApi!.playlistItems.list(
-        ['id', 'snippet', 'status'],
-        playlistId: playlistId, maxResults: 50);
-    final playlist = result.items
-        ?.map((e) => e.snippet?.resourceId?.videoId)
-        .where((element) => element != null)
-        .map((e) => e!)
-        .toList();
+        ['id', 'snippet', 'status', 'contentDetails'],
+        playlistId: playlist.id, maxResults: 50);
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PlayerScreen(
-          playList: playlist,
-          audioHandler: AudioPlayerHandler(),
-        ),
-      ),
-    );
+    if (result.items == null) return;
+    // ignore: use_build_context_synchronously
+    Navigator.push(context, MaterialPageRoute(builder: (context) {
+      return PlaylistDetail(
+        playlist: playlist,
+        playlistItems: result.items!,
+      );
+    }));
   }
 
   @override
@@ -170,7 +128,7 @@ class PlaylistScreenState extends State<PlaylistScreen> {
                       },
                       onLongPress: () {
                         // playlists.child(snapshot.data![index].id!).remove();
-                        newPlaylist(snapshot.data![index].id!);
+                        newPlaylist(snapshot.data![index]);
                       },
                     );
                   });
@@ -180,6 +138,7 @@ class PlaylistScreenState extends State<PlaylistScreen> {
           },
         )),
         floatingActionButton: FloatingActionButton(
+          heroTag: 'login',
           onPressed: () {
             login();
           },

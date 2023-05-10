@@ -1,14 +1,19 @@
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:audio_service/audio_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:googleapis/youtube/v3.dart';
 import 'package:sizer/sizer.dart';
+import 'package:youtube/main.dart';
+import 'package:youtube_explode_dart/youtube_explode_dart.dart' as ytex;
+
+import 'home.dart';
 
 const Color _overlay_button_secondary = Color(0x1affffff);
 
-final Playlist data = Playlist(
+final Playlist defaultPlaylist = Playlist(
   kind: 'youtube#playlist',
   id: 'PL4o29bINVT4EG_y-k5jGoOu3-Am8Nvi10',
   snippet: PlaylistSnippet(
@@ -62,7 +67,7 @@ final Playlist data = Playlist(
   ),
 );
 
-final List<PlaylistItem> items = [
+final List<PlaylistItem> defaultPlaylistItems = [
   PlaylistItem(
     kind: 'youtube#playlistItem',
     etag: 'etag',
@@ -164,7 +169,19 @@ final List<PlaylistItem> items = [
 ];
 
 class PlaylistDetail extends StatefulWidget {
-  const PlaylistDetail({Key? key}) : super(key: key);
+  Playlist playlist = defaultPlaylist;
+  List<PlaylistItem> playlistItems = defaultPlaylistItems;
+
+  PlaylistDetail(
+      {Key? key, Playlist? playlist, List<PlaylistItem>? playlistItems})
+      : super(key: key) {
+    if (playlist != null) {
+      this.playlist = playlist;
+    }
+    if (playlistItems != null) {
+      this.playlistItems = playlistItems;
+    }
+  }
 
   @override
   PlaylistDetailState createState() => PlaylistDetailState();
@@ -173,6 +190,8 @@ class PlaylistDetail extends StatefulWidget {
 class PlaylistDetailState extends State<PlaylistDetail> {
   static const Color _background = Color(0xFF0F0F0F);
 
+  Playlist get data => widget.playlist;
+  List<PlaylistItem> get items => widget.playlistItems;
   String get thumbnailUrl => data.snippet?.thumbnails?.high?.url ?? '';
   String get title => data.snippet?.title ?? '';
   String get description => data.snippet?.description ?? '';
@@ -180,17 +199,53 @@ class PlaylistDetailState extends State<PlaylistDetail> {
   String get itemCount => data.contentDetails?.itemCount?.toString() ?? '';
 
   List<Color> get gradientColors {
-    int color = 0x424a59; // (Random().nextDouble() * 0xFFFFFF).toInt();
+    int color = (Random().nextDouble() * 0xFFFFFF).toInt();
     return <Color>[
-      Color(0xcc000000 | color), // 0
-      Color(0x4c000000 | color), // 33
-      _background, // 99
+      Color(0xcc000000 | color),
+      Color(0x4c000000 | color),
+      _background,
     ];
   }
 
-  // function that returns playlist items
-  List<PlaylistItem> fetchPlaylistItems() {
-    return <PlaylistItem>[];
+  void playAll() async {
+    final yt = ytex.YoutubeExplode();
+    final playlist = items
+        .map((e) => e.snippet?.resourceId?.videoId)
+        .where((element) => element != null)
+        .map((e) => yt.videos.get(e!).then((v) => MediaItem(
+              id: v.id.value,
+              title: v.title,
+              artist: v.author,
+              duration: v.duration,
+              artUri: Uri.parse(v.thumbnails.mediumResUrl),
+            )));
+
+    Navigator.pop(context);
+    (homeScreen.currentWidget as BottomNavigationBar).onTap!(2);
+    for (var item in playlist) {
+      audioHandler.addQueueItem(await item);
+    }
+    // List<MediaItem> videos = items.map((item) {
+
+    //   return MediaItem(
+    //     id: item.contentDetails?.videoId ?? '',
+    //     title: item.snippet?.title ?? '',
+    //     album: data.snippet?.title ?? '',
+    //     duration: Duration.zero,
+    //     displayDescription: item.snippet?.description ?? '',
+    //     artUri: Uri.parse(item.snippet?.thumbnails?.high?.url ?? ''),
+    //     artist: item.snippet?.channelTitle ?? '',
+    //   );
+    // }).toList();
+    // Navigator.push(
+    //   context,
+    //   MaterialPageRoute(
+    //     builder: (context) => VideoPlayerScreen(
+    //       videos: videos,
+    //       initialVideo: videos[0],
+    //     ),
+    //   ),
+    // );
   }
 
   @override
@@ -220,36 +275,34 @@ class PlaylistDetailState extends State<PlaylistDetail> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Expanded(
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Opacity(
-                  opacity: 0.7,
-                  child: CachedNetworkImage(
-                    alignment: Alignment.topCenter,
-                    imageUrl: thumbnailUrl,
-                    fit: BoxFit.fitWidth,
-                  ),
+          Stack(
+            fit: StackFit.expand,
+            children: [
+              Opacity(
+                opacity: 0.7,
+                child: CachedNetworkImage(
+                  alignment: Alignment.topCenter,
+                  imageUrl: thumbnailUrl,
+                  fit: BoxFit.fitWidth,
                 ),
-                ClipRRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          stops: const <double>[0, 0.33, 1],
-                          colors: gradientColors,
-                          tileMode: TileMode.mirror,
-                        ),
+              ),
+              ClipRRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        stops: const <double>[0, 0.33, 1],
+                        colors: gradientColors,
+                        tileMode: TileMode.mirror,
                       ),
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -310,10 +363,6 @@ class PlaylistDetailState extends State<PlaylistDetail> {
   Widget thumbnail() {
     return ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        // child: Image.network(
-        //   thumbnailUrl,
-        //   // fit: BoxFit.cover,
-        // ),
         child: IntrinsicHeight(
           child: CachedNetworkImage(
             imageUrl: thumbnailUrl,
@@ -398,7 +447,7 @@ class PlaylistDetailState extends State<PlaylistDetail> {
               children: [
                 const SizedBox(width: 8),
                 Container(
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: _overlay_button_secondary,
                     shape: BoxShape.circle,
                   ),
@@ -444,22 +493,26 @@ class PlaylistDetailState extends State<PlaylistDetail> {
                   color: Colors.white,
                   borderRadius: BorderRadius.all(Radius.circular(18)),
                 ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.play_arrow,
-                      color: Colors.black,
-                      size: 20,
-                    ),
-                    Text(
-                      '모두 재생',
-                      style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500),
-                    ),
-                  ],
+                child: InkWell(
+                  onTap: playAll,
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.play_arrow,
+                        color: Colors.black,
+                        size: 20,
+                      ),
+                      SizedBox(width: 6),
+                      Text(
+                        '모두 재생',
+                        style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -472,22 +525,26 @@ class PlaylistDetailState extends State<PlaylistDetail> {
                   color: _overlay_button_secondary,
                   borderRadius: BorderRadius.all(Radius.circular(18)),
                 ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.shuffle,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                    Text(
-                      '셔플',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500),
-                    ),
-                  ],
+                child: InkWell(
+                  onTap: () {},
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.shuffle,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      SizedBox(width: 6),
+                      Text(
+                        '셔플',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             )

@@ -105,27 +105,6 @@ class PlayerScreenState extends State<PlayerScreen>
     super.dispose();
   }
 
-  // @override
-  // void didChangeDependencies() async {
-  //   args =
-  //       ModalRoute.of(context)?.settings.arguments as PlayerScreenArguments? ??
-  //           PlayerScreenArguments(null);
-  //   final yt = YoutubeExplode();
-  //   for (final url in args.playList ?? []) {
-  //     var info = await yt.videos.get(url);
-  //     await _audioHandler.addQueueItem(
-  //       MediaItem(
-  //         id: VideoId(url).value,
-  //         title: info.title,
-  //         artist: info.author,
-  //         duration: info.duration,
-  //         artUri: Uri.parse(info.thumbnails.standardResUrl),
-  //       ),
-  //     );
-  //   }
-  //   super.didChangeDependencies();
-  // }
-
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
@@ -252,6 +231,7 @@ class PlayerScreenState extends State<PlayerScreen>
         ),
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'add',
         onPressed: () {
           _textController.clear();
           showDialog(
