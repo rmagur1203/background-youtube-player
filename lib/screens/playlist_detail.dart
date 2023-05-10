@@ -171,6 +171,7 @@ final List<PlaylistItem> defaultPlaylistItems = [
 class PlaylistDetail extends StatefulWidget {
   Playlist playlist = defaultPlaylist;
   List<PlaylistItem> playlistItems = defaultPlaylistItems;
+  int color = (Random().nextDouble() * 0xFFFFFF).toInt();
 
   PlaylistDetail(
       {Key? key, Playlist? playlist, List<PlaylistItem>? playlistItems})
@@ -199,10 +200,10 @@ class PlaylistDetailState extends State<PlaylistDetail> {
   String get itemCount => data.contentDetails?.itemCount?.toString() ?? '';
 
   List<Color> get gradientColors {
-    int color = (Random().nextDouble() * 0xFFFFFF).toInt();
+    // int color = (Random().nextDouble() * 0xFFFFFF).toInt();
     return <Color>[
-      Color(0xcc000000 | color),
-      Color(0x4c000000 | color),
+      Color(0xcc000000 | widget.color),
+      Color(0x4c000000 | widget.color),
       _background,
     ];
   }
@@ -340,8 +341,10 @@ class PlaylistDetailState extends State<PlaylistDetail> {
 
   Widget topBar() {
     return Positioned(
-        top: 0,
-        width: 100.0.w,
+      top: 0,
+      child: ConstrainedBox(
+        constraints:
+            BoxConstraints(maxWidth: MediaQuery.of(context).size.width),
         child: Row(
           children: [
             IconButton(
@@ -357,7 +360,9 @@ class PlaylistDetailState extends State<PlaylistDetail> {
               icon: const Icon(Icons.more_vert),
             )
           ],
-        ));
+        ),
+      ),
+    );
   }
 
   Widget thumbnail() {
