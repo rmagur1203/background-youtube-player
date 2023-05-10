@@ -495,9 +495,9 @@ class PlaylistDetailState extends State<PlaylistDetail> {
                 ),
                 child: InkWell(
                   onTap: playAll,
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
+                    children: const [
                       Icon(
                         Icons.play_arrow,
                         color: Colors.black,
@@ -527,9 +527,9 @@ class PlaylistDetailState extends State<PlaylistDetail> {
                 ),
                 child: InkWell(
                   onTap: () {},
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
+                    children: const [
                       Icon(
                         Icons.shuffle,
                         color: Colors.white,

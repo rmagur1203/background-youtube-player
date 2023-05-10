@@ -76,7 +76,11 @@ class PlaylistScreenState extends State<PlaylistScreen> {
             )));
     (homeScreen.currentWidget as BottomNavigationBar).onTap!(2);
     for (var item in playlist) {
-      audioHandler.addQueueItem(await item);
+      try {
+        audioHandler.addQueueItem(await item);
+      } catch (e) {
+        print(e);
+      }
     }
   }
 
