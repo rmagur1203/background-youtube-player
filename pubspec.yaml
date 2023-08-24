@@ -37,7 +37,7 @@ dependencies:
   cupertino_icons: ^1.0.2
   just_audio: ^0.9.32
   just_audio_windows: ^0.2.0
-  youtube_explode_dart: ^1.12.4
+  youtube_explode_dart: ^2.0.2
   rxdart: ^0.27.7
   audio_session: ^0.1.13
   audio_service: ^0.18.9
@@ -47,13 +47,13 @@ dependencies:
   desktop_webview_auth: ^0.0.11
   google_sign_in: ^6.0.2
   firebase_auth: ^4.4.0
-  googleapis: ^10.1.0
+  googleapis: ^11.3.0
   googleapis_auth: ^1.4.0
   cached_network_image: ^3.2.3
-  intl: ^0.17.0
+  intl: ^0.18.1
   extension_google_sign_in_as_googleapis_auth: ^2.0.9
   fluttertoast: ^8.2.1
-  http: ^0.13.5
+  http: ^1.1.0
   sizer: ^2.0.15
 
 dev_dependencies:

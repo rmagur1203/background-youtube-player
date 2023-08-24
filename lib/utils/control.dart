@@ -38,13 +38,8 @@ class ControlButtons extends StatelessWidget {
           stream: handler.shuffleModeStream,
           builder: (context, snapshot) => IconButton(
             icon: {
-              AudioServiceShuffleMode.none: SvgPicture.asset(
-                'assets/icons/shuffle_wght200.svg',
-                colorFilter: ColorFilter.mode(
-                  Theme.of(context).iconTheme.color!,
-                  BlendMode.srcIn,
-                ),
-              ),
+              AudioServiceShuffleMode.none:
+                  const Icon(Icons.shuffle, color: Colors.grey),
               AudioServiceShuffleMode.all: const Icon(Icons.shuffle),
             }[snapshot.data ?? AudioServiceShuffleMode.none]!,
             onPressed: () => {
@@ -107,13 +102,15 @@ class ControlButtons extends StatelessWidget {
           stream: handler.repeatModeStream,
           builder: (context, snapshot) => IconButton(
             icon: {
-              AudioServiceRepeatMode.none: SvgPicture.asset(
-                'assets/icons/repeat_wght200.svg',
-                colorFilter: ColorFilter.mode(
-                  Theme.of(context).iconTheme.color!,
-                  BlendMode.srcIn,
-                ),
-              ),
+              // AudioServiceRepeatMode.none: SvgPicture.asset(
+              //   'assets/icons/repeat_wght200.svg',
+              //   colorFilter: ColorFilter.mode(
+              //     Theme.of(context).iconTheme.color!,
+              //     BlendMode.srcIn,
+              //   ),
+              // ),
+              AudioServiceRepeatMode.none:
+                  const Icon(Icons.repeat, color: Colors.grey),
               AudioServiceRepeatMode.all: const Icon(Icons.repeat),
               AudioServiceRepeatMode.one: const Icon(Icons.repeat_one),
             }[snapshot.data ?? AudioServiceRepeatMode.none]!,

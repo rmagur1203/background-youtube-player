@@ -5,7 +5,6 @@ import 'package:audio_service/audio_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:googleapis/youtube/v3.dart';
-import 'package:sizer/sizer.dart';
 import 'package:youtube/main.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart' as ytex;
 
@@ -506,9 +505,9 @@ class PlaylistDetailState extends State<PlaylistDetail> {
                 ),
                 child: InkWell(
                   onTap: playAll,
-                  child: Row(
+                  child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
+                    children: [
                       Icon(
                         Icons.play_arrow,
                         color: Colors.black,
@@ -538,9 +537,9 @@ class PlaylistDetailState extends State<PlaylistDetail> {
                 ),
                 child: InkWell(
                   onTap: () {},
-                  child: Row(
+                  child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
+                    children: [
                       Icon(
                         Icons.shuffle,
                         color: Colors.white,
